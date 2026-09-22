@@ -1,146 +1,177 @@
-# SwipeHouse
+# Swipe to Shortlist
 
-A Tinder-style qualification funnel for estate agents. You send a client one link.
-They type their name, email, area and budget, then swipe left or right on about
-twenty pictures: house styles, gardens, floor plans, a resort-size community pool,
-a private lap pool. Sixty seconds later you have a brief that a normal form would
-never have got out of them, and they had fun making it.
+A Tinder-style qualification funnel for Dubai estate agents. You send a buyer one
+link. They swipe through three rounds of property pictures that get narrower as
+they go, answer five quick questions about money and timing, and you get a brief
+plus a lead temperature out of 100.
 
-Every lead is saved the moment they start, so the people who wander off halfway
-still show up on your desk with a score and the exact card they quit on.
+The temperature is not a completion meter. 100 means the buyer can proceed today:
+money already in the UAE or a mortgage pre-approved, in Dubai and free to view
+this week, and a brief with no contradictions in it. Someone who finishes every
+card but has not spoken to a bank and is "watching the market" lands in the
+thirties, which is exactly where they belong.
 
-No frameworks, no database, no build step. Node 18 or newer and one command.
+Two ways to run it:
 
 ```bash
-npm start
-# client link:     http://localhost:3000/
-# your dashboard:  http://localhost:3000/agent
+npm start      # full app: client funnel, lead storage, agent dashboard
 ```
+
+```
+public/        # or host this folder as flat files, no server at all
+```
+
+The single page works either way. With a server behind it, every swipe is saved
+as it happens, so the people who wander off halfway still land on your desk. As
+flat files, the buyer's brief arrives by email when they press send.
+
+- Client link: `http://localhost:3000/`
+- Agent dashboard: `http://localhost:3000/agent`
 
 The dashboard passcode is printed in the terminal on first run. Set your own with
 `AGENT_PASSCODE` so it survives a restart.
 
-## What the client sees
+## How the funnel narrows
 
-1. **Welcome.** One button. No wall of fields.
-2. **Three quick steps.** Name and email, then what and where, then budget and timing.
-   Chips instead of dropdowns, so it is mostly tapping.
-3. **The deck.** A card at a time: picture on top, title and one line underneath.
-   Drag it, tap the buttons, or use the arrow keys. Z undoes the last swipe.
-   Stamps, haptics, a progress bar and a running count of what is left.
-4. **The reveal.** A score, the brief their swipes built ("Pool: private pool.
-   Greenery: roof terrace. Layout: open plan"), the shortlist of everything they
-   liked, and an optional phone number and note.
+**Round 1, the wide net.** Six places with nothing in common: a Marina tower, a
+Downtown high-rise, a villa in a gated community, a beachfront villa, a golf
+community villa, off-plan with a payment plan. What they swipe right on decides
+which corner of the market they are in.
 
-If they close the tab mid-deck, the answers so far are already saved, and the link
-picks up where they left off for 24 hours.
+**Round 2, narrowing.** Six cards picked for that corner. A villa buyer is asked
+about a majlis, a staff room, landscaping and a garage. An apartment buyer is
+asked about sea views, high floors, balconies and the podium pool. Nobody is
+asked about mowing a lawn they will never own.
 
-## What you see
+**Round 3, the fussy bit.** The water question is always settled here: shared
+pool, private pool, plunge pool or none. Plus home office, metro, gym, security,
+whatever is still undecided for their corner.
 
-`/agent` is the lead desk:
+**Then five taps.** What it is for, budget, how it gets paid for, when they are
+moving, and whether they can view in person. Budget comes after the pictures on
+purpose: by then they have already shown you their taste, so the answer is
+honest rather than aspirational.
 
-- Every lead scored 0 to 100 and labelled Cold, Warming, Qualified or Hot.
-- Status at a glance: opened, swiping now, finished the deck, or dropped out.
-  Drop-outs show how far they got and which card they stopped on.
-- The answers as facets ("wants a private pool, ruled out the community one"),
-  plus the thumbnails they swiped right and left on.
-- A plain-text summary sized for a CRM note, a copy button, and a prefilled email.
-- Your own notes per lead, archive, delete, and a CSV export of the lot.
+## How the temperature is worked out
 
-### How the score works
-
-The swiping carries the weight, because contact details are what every boring form
-already collects and they qualify nobody.
-
-| Signal | Points | Why |
+| Band | Out of | What moves it |
 | --- | --- | --- |
-| Name, email, phone | 18 | Table stakes |
-| Type, area, budget | 20 | The brief |
-| Timing | 10 | Ready now beats "just browsing" |
-| Cards answered | 42 | The part that actually tells you something |
-| Decisiveness | 10 | Swiping right on everything tells you nothing |
+| Funds | 30 | Cash in the UAE 30, pre-approved mortgage 27, cash transferring in 23, mortgage not started 12, needs to sell first 7, no idea 3 |
+| Timing | 20 | Buying now 20, within a month 16, one to three months 12, three to six 6, watching 2 |
+| Viewing | 15 | In Dubai this week 15, in a few weeks 11, flying in 10, remote only 6 |
+| Clarity | 20 | Rounds played, a real mix of yes and no, and no contradictions |
+| Budget | 10 | Given at all, plus whether it actually reaches what they liked |
+| Contact | 5 | Name, email, phone |
 
-80 and up is Hot, 60 is Qualified, 35 is Warming, below that is Cold. Tune the
-numbers in `lib/scoring.js` if your market disagrees.
+85 and up is Ready to proceed, 70 is Hot, 50 is Warm, 30 is Cool, below that is
+Cold. Every lead shows its own arithmetic on the dashboard, so you can argue with
+the number instead of trusting it.
+
+**Flags** are the part worth reading. The dashboard raises them automatically:
+
+- *Budget will not reach the taste.* Someone who swiped right on a beachfront
+  villa (from AED 15M) with a budget of AED 1M to 2M gets flagged before you
+  spend a Saturday on them.
+- *Finance not arranged yet*, *buying depends on selling first*, *overseas buyer,
+  video tours only*, *says they are only watching the market*.
+- *Wants both sides of an either/or.* Swiping right on both a private pool and no
+  pool means they have not decided, and the clarity score drops.
+- The good ones too: cash already in the UAE, free to view this week, consistent
+  brief.
+
+## What the agent sees
+
+`/agent`, behind a passcode:
+
+- Every lead scored and sorted hottest first, with the six bands that produced
+  the number and the flags underneath.
+- Status at a glance: opened, swiping now, on the money questions, finished, or
+  dropped out. Drop-outs show the round and the card they quit on, or which
+  readiness question they baulked at.
+- Every card they swiped right and left, so you can see the brief rather than
+  read it.
+- A plain-text brief sized for WhatsApp or a CRM note, a copy button, a prefilled
+  email, and a WhatsApp link when they left a number.
+- Notes per lead, archive, delete, CSV export of the lot.
 
 ## Make it yours
-
-Everything is environment variables, no code edit needed:
 
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `PORT` | `3000` | Port to listen on |
-| `AGENT_NAME` | `your agent` | Your name, used throughout the client copy |
-| `AGENCY_NAME` | `SwipeHouse` | Shown on the welcome screen |
-| `CURRENCY_SYMBOL` | `$` | Used on the budget chips and in summaries |
+| `AGENT_NAME` | `your agent` | Your name, used in the client copy |
+| `AGENCY_NAME` | `Swipe to Shortlist` | Shown on the dashboard |
 | `AGENT_PASSCODE` | random per run | Dashboard passcode |
-| `DECK_LIMIT` | `20` | Cards per client. Drop to 12 for an even faster funnel |
 | `DATA_FILE` | `data/leads.json` | Where leads are written |
 
-```bash
-AGENT_NAME="Dana" AGENCY_NAME="Kiselev Property" CURRENCY_SYMBOL="£" \
-AGENT_PASSCODE="something-long" npm start
+The client page also reads the agent's name and email from the link itself, so
+one hosted copy can serve a whole team:
+
+```
+https://your-host/#a=Peter%20Kiselev&e=peter@agency.ae
 ```
 
-### The cards
+Open the page, expand "Are you the agent? Build your link", and it writes that
+link for you.
 
-`lib/deck.js` is the whole questionnaire. A card looks like this:
+## The cards
+
+`lib/qualify.js` is the whole questionnaire, the rounds, and the scoring. A card
+looks like this:
 
 ```js
-{
-  id: 'pool-private',
-  category: 'pool',
-  title: 'Private lap pool',
-  caption: 'Yours alone, swim before work',
-  image: '/img/pool-private.svg',
-  facet: { key: 'pool', value: 'private pool' },  // what liking it means
-  tags: ['private pool', 'premium', 'outdoor living'],
-  only: ['house', 'townhouse'],                   // optional filter by property type
+'d1-beach': {
+  t: 'Beachfront villa',
+  c: 'Sand at the end of the garden, sea out every window',
+  f: ['Location', 'beachfront villa'],   // the answer the agent reads
+  b: { prime: 2, villa: 1 },             // which corner liking it points to
+  from: 15000000,                        // realistic entry price, in AED
+  g: ['beachfront', 'prime', 'villa'],
 }
 ```
 
-`facet` is what the dashboard reports as an answer. `tags` feed the want and
-deal-breaker chips. `only` hides a card from the wrong buyer, so nobody looking at
-apartments is asked about mowing a lawn. Cards are dealt round robin across
-categories, so the deck never runs five pools in a row.
+`from` is what powers the budget-versus-taste flag, so keep it roughly honest for
+your patch of the market. `ROUND2` and `ROUND3` map each corner to the cards worth
+asking about next: that is where you change how the funnel narrows.
 
-**Using real photography.** Point `image` at any URL, including a remote one, and
-the card uses it. The bundled SVG illustrations exist so the site works with no
-image hosting, no licensing questions and almost no bandwidth. If you replace them,
-crop to 4:3 and keep the subject centred: the card shows most of the frame. To edit
-an illustration, change `scripts/generate-images.js` and run `npm run images`.
+**Using real photography.** The illustrations are drawn by
+`scripts/generate-images.js` so the site needs no image hosting and no licensing
+questions. To use photos of your own stock instead, drop them in `public/img`
+with the same file names, crop to 4:3 and keep the subject centred.
 
 ## Data and privacy
 
-Leads live in one JSON file, written atomically. You can read it, back it up, or
-delete a line. Client sessions are protected by a per-lead token so one visitor
-cannot read or overwrite another's answers, and the dashboard sits behind a
-passcode with rate-limited logins and an HttpOnly session cookie.
+Leads live in one JSON file, written atomically. Each client session is protected
+by a per-lead token so one buyer cannot read or overwrite another's answers, and
+the dashboard sits behind a passcode with rate-limited logins and an HttpOnly
+cookie.
 
-If you put this on the public internet, put it behind HTTPS (a reverse proxy is
-fine, the cookie upgrades itself to `Secure` when it sees `X-Forwarded-Proto`), and
-set a long `AGENT_PASSCODE`. You are storing names and email addresses, so keep the
-retention short and tell clients who you are, which is the only reason the welcome
-screen says the answers go to one agent.
+If you put this on the public internet, put it behind HTTPS (the cookie upgrades
+itself to `Secure` when it sees `X-Forwarded-Proto`) and set a long
+`AGENT_PASSCODE`. You are storing names, phone numbers and email addresses, so
+keep retention short and tell buyers who you are.
 
 ## Development
 
 ```bash
-npm start     # run it
-npm run dev   # run it with auto restart
-npm test      # unit and HTTP tests, no network needed
+npm start      # run it
+npm run dev    # run it with auto restart
+npm test       # 33 unit and HTTP tests, no network needed
 npm run images # redraw the card illustrations
+npm run sync   # copy lib/qualify.js into public/ for flat-file hosting
 ```
 
 ```
-server.js                 routing, static files, agent auth, rate limits
-lib/deck.js               the cards and how a deck is dealt
-lib/scoring.js            swipes to score, facets, drop-off, CRM summary
-lib/store.js              JSON persistence
-public/                   client app, agent dashboard, illustrations
+server.js                   routing, static files, agent auth, rate limits
+lib/qualify.js              the deck, the rounds, the questions, the hotness model
+lib/scoring.js              shapes a lead for the dashboard
+lib/store.js                JSON persistence
+public/shortlist.html       the client funnel, standalone capable
+public/agent.*              the lead desk
 scripts/generate-images.js  draws public/img/*.svg
-test/                     node:test suites
+test/                       node:test suites
 ```
 
-Swap `lib/store.js` for a database when one file stops being enough. Nothing else
-knows how leads are stored.
+`lib/qualify.js` is deliberately a universal module: the server requires it and
+the browser loads the same file, so a lead is scored identically in both places.
+`public/qualify.js` is a generated copy, kept honest by a test.

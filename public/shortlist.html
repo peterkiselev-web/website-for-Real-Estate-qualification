@@ -1,0 +1,814 @@
+<title>Swipe to Shortlist</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Archivo:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --paper: #f7f3ea;
+  --paper-2: #efe8db;
+  --ink: #17242c;
+  --ink-soft: #5d6b73;
+  --rule: #ddd2bf;
+  --yes: #0f6e5c;
+  --no: #c2452c;
+  --stamp: #1d3f8f;
+  --card: #ffffff;
+  --shadow: 0 18px 40px rgba(23, 36, 44, 0.16);
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --ui: "Archivo", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #131c22; --paper-2: #1b262d; --ink: #f0ece2; --ink-soft: #9aa8b0;
+    --rule: #2f3d45; --yes: #4ec3a3; --no: #ef7d63; --stamp: #8fb0ff;
+    --card: #212c33; --shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #131c22; --paper-2: #1b262d; --ink: #f0ece2; --ink-soft: #9aa8b0;
+  --rule: #2f3d45; --yes: #4ec3a3; --no: #ef7d63; --stamp: #8fb0ff;
+  --card: #212c33; --shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--ui); font-size: 16px; line-height: 1.45;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+button, input { font: inherit; color: inherit; }
+
+.wrap {
+  width: 100%; max-width: 470px; margin: 0 auto; min-height: 100%;
+  padding: 0 18px; padding-block: 18px 22px; display: flex; flex-direction: column;
+}
+
+.masthead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; padding-bottom: 10px; border-bottom: 2px solid var(--ink);
+}
+.masthead .mark { font-family: var(--display); font-weight: 900; font-size: 19px; letter-spacing: -0.01em; }
+.masthead .ref {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+
+.screen { display: none; flex: 1; flex-direction: column; }
+.screen.on { display: flex; }
+.screen[hidden] { display: none !important; }
+
+h1.display {
+  font-family: var(--display); font-weight: 900; font-size: clamp(33px, 9vw, 44px);
+  line-height: 0.98; letter-spacing: -0.025em; margin: 18px 0 10px; text-wrap: balance;
+}
+h2.display {
+  font-family: var(--display); font-weight: 700; font-size: clamp(25px, 6.6vw, 31px);
+  line-height: 1.06; letter-spacing: -0.02em; margin: 0 0 4px; text-wrap: balance;
+}
+p.lede { color: var(--ink-soft); margin: 0 0 18px; max-width: 34em; }
+p.lede b { color: var(--ink); font-weight: 600; }
+
+.fan { position: relative; height: 196px; margin-top: auto; display: grid; place-items: center; }
+.fan img {
+  position: absolute; width: 176px; height: 138px; object-fit: cover; max-width: 100%;
+  border: 6px solid var(--card); border-radius: 4px; box-shadow: var(--shadow);
+}
+.fan img:nth-child(1) { transform: rotate(-13deg) translate(-56px, 4px); }
+.fan img:nth-child(2) { transform: rotate(9deg) translate(58px, -12px); }
+.fan img:nth-child(3) { transform: rotate(-2deg); }
+
+.steps-preview {
+  list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 1px;
+  background: var(--rule); border-block: 1px solid var(--rule);
+}
+.steps-preview li {
+  background: var(--paper); display: grid; grid-template-columns: 30px 1fr;
+  gap: 10px; padding: 11px 2px; align-items: baseline;
+}
+.steps-preview .n {
+  font-family: var(--display); font-weight: 900; font-size: 17px;
+  color: var(--yes); font-variant-numeric: tabular-nums;
+}
+.steps-preview .t { font-size: 14.5px; }
+.steps-preview .t b { font-weight: 600; }
+.steps-preview .t span { color: var(--ink-soft); }
+
+.btn {
+  display: block; width: 100%; border: 0; cursor: pointer;
+  background: var(--ink); color: var(--paper); padding: 15px 18px; border-radius: 3px;
+  font-weight: 600; font-size: 16.5px; letter-spacing: -0.01em;
+  transition: transform 0.12s ease, opacity 0.2s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--rule); }
+.btn.small { width: auto; padding: 10px 15px; font-size: 14.5px; }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.btn .sub { display: block; font-weight: 400; font-size: 12.5px; opacity: 0.8; margin-top: 2px; }
+.row { display: flex; gap: 9px; }
+.row .btn { flex: 1; }
+.push { margin-top: auto; }
+
+.field { display: block; margin-bottom: 13px; }
+.field span {
+  display: block; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 5px; font-weight: 600;
+}
+.field input {
+  width: 100%; padding: 13px 14px; background: var(--card);
+  border: 1.5px solid var(--rule); border-radius: 3px;
+}
+.field input:focus { outline: none; border-color: var(--yes); }
+.err { color: var(--no); font-size: 13.5px; min-height: 19px; margin: 0 0 6px; }
+.hint-small { font-size: 12.5px; color: var(--ink-soft); margin: -6px 0 14px; }
+
+.roundbar { display: grid; gap: 7px; margin: 14px 0 10px; }
+.roundbar .track { display: flex; gap: 4px; }
+.roundbar .seg { height: 6px; flex: 1; background: var(--rule); border-radius: 1px; overflow: hidden; }
+.roundbar .seg i { display: block; height: 100%; width: 0; background: var(--yes); transition: width 0.4s ease; }
+.roundbar .meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.roundbar .name { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+.roundbar .count { font-size: 12.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+.stack-wrap { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+.stack { position: relative; width: 100%; aspect-ratio: 0.88; max-height: 56dvh; margin-bottom: 26px; }
+.card {
+  position: absolute; inset: 0; background: var(--card); border-radius: 4px;
+  box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.card .media { flex: 1; min-height: 0; background: var(--paper-2); }
+.card .media img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.card .body { padding: 12px 15px 15px; border-top: 2px solid var(--ink); }
+.card .kicker { font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--yes); font-weight: 700; }
+.card h3 {
+  font-family: var(--display); font-weight: 700; font-size: 21px;
+  line-height: 1.1; letter-spacing: -0.02em; margin: 4px 0 3px;
+}
+.card p { margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.3; }
+.card.b1 { transform: translateY(10px) scale(0.962); }
+.card.b2 { transform: translateY(19px) scale(0.925); }
+.card.settle { transition: transform 0.34s cubic-bezier(0.2, 0.9, 0.25, 1); }
+.card.gone { transition: transform 0.36s ease-out, opacity 0.36s ease-out; opacity: 0; z-index: 6; }
+.card.back { animation: back 0.32s ease-out; }
+@keyframes back { from { transform: translateY(-34px) scale(1.03); opacity: 0; } }
+
+.stamp {
+  position: absolute; top: 20px; font-family: var(--display); font-weight: 900;
+  font-size: 23px; letter-spacing: 0.02em; padding: 5px 12px; border: 3px solid;
+  border-radius: 3px; opacity: 0; pointer-events: none; text-transform: uppercase;
+}
+.stamp.yes { left: 18px; color: var(--yes); border-color: var(--yes); transform: rotate(-11deg); }
+.stamp.no { right: 18px; color: var(--no); border-color: var(--no); transform: rotate(11deg); }
+
+.pads { display: flex; align-items: center; justify-content: center; gap: 20px; }
+.pad {
+  width: 62px; height: 62px; border-radius: 50%; border: 2px solid var(--ink);
+  background: var(--card); cursor: pointer; display: grid; place-items: center;
+  transition: transform 0.12s ease;
+}
+.pad:active { transform: scale(0.9); }
+.pad svg { width: 25px; height: 25px; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.pad.no { border-color: var(--no); } .pad.no svg { stroke: var(--no); }
+.pad.yes { border-color: var(--yes); } .pad.yes svg { stroke: var(--yes); }
+.pad.undo { width: 46px; height: 46px; border-color: var(--rule); }
+.pad.undo svg { width: 19px; height: 19px; stroke: var(--ink-soft); }
+.pad.undo[disabled] { opacity: 0.35; cursor: not-allowed; }
+.keys { text-align: center; font-size: 12px; color: var(--ink-soft); margin: 9px 0 0; }
+.toast {
+  position: absolute; left: 50%; bottom: 2px; transform: translate(-50%, 8px);
+  background: var(--ink); color: var(--paper); padding: 7px 14px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap; pointer-events: none;
+}
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+.gate { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.gate .rnum {
+  font-family: var(--display); font-weight: 900; font-size: 72px; line-height: 0.8;
+  color: var(--yes); font-variant-numeric: tabular-nums;
+}
+.gate .learned { border-left: 3px solid var(--yes); padding-left: 13px; margin: 16px 0 6px; }
+.gate ul { list-style: none; margin: 0; padding: 0; font-size: 15px; }
+.gate .learned li { margin-bottom: 4px; }
+.gate .narrowing { font-size: 13px; color: var(--ink-soft); margin-top: 14px; }
+
+/* ------------------------------------------------ readiness questions */
+.q-head { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 6px; }
+.q-head .step { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; }
+.answers { display: grid; gap: 9px; margin-top: 14px; }
+.answer {
+  width: 100%; text-align: left; cursor: pointer; background: var(--card);
+  border: 1.5px solid var(--rule); border-radius: 3px; padding: 15px 16px;
+  font-size: 16px; font-weight: 500; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+.answer:hover { border-color: var(--ink-soft); }
+.answer:active { transform: translateY(1px); }
+.answer[aria-checked="true"] { border-color: var(--yes); box-shadow: inset 0 0 0 1px var(--yes); }
+.answer .tick { color: var(--yes); font-weight: 700; opacity: 0; }
+.answer[aria-checked="true"] .tick { opacity: 1; }
+
+/* ------------------------------------------------------------- result */
+.sheet { background: var(--card); border: 1.5px solid var(--rule); border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
+.sheet-top {
+  padding: 16px 16px 13px; border-bottom: 2px solid var(--ink);
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+}
+.sheet-top .who { font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.05; letter-spacing: -0.02em; }
+.sheet-top .sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; word-break: break-word; }
+.gradestamp {
+  flex: none; border: 2.5px solid var(--stamp); color: var(--stamp);
+  border-radius: 3px; padding: 5px 9px; transform: rotate(4deg); text-align: center;
+}
+.gradestamp b { display: block; font-family: var(--display); font-weight: 900; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+.gradestamp span { display: block; font-size: 10px; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
+
+.rows { display: grid; }
+.rows div {
+  display: grid; grid-template-columns: 108px 1fr; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--rule); font-size: 14.5px;
+}
+.rows div:last-child { border-bottom: 0; }
+.rows .k {
+  font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 600; padding-top: 3px;
+}
+.rows .v { font-weight: 500; }
+.rows .v em { font-style: normal; color: var(--ink-soft); }
+
+.liked { display: flex; gap: 7px; overflow-x: auto; padding: 14px 16px; }
+.liked figure { margin: 0; flex: 0 0 92px; }
+.liked img { width: 92px; height: 68px; object-fit: cover; border-radius: 3px; border: 1px solid var(--rule); }
+.liked figcaption { font-size: 11px; color: var(--ink-soft); margin-top: 4px; line-height: 1.2; }
+
+.agent-setup { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.agent-setup summary { cursor: pointer; font-size: 13px; color: var(--ink-soft); }
+.agent-setup .out {
+  font-size: 12px; word-break: break-all; background: var(--paper-2);
+  border: 1px solid var(--rule); border-radius: 3px; padding: 9px; margin-top: 8px;
+}
+.note { font-size: 12.5px; color: var(--ink-soft); text-align: center; margin: 10px 0 0; }
+
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+:focus-visible { outline: 3px solid var(--yes); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="mark">Swipe to Shortlist</div>
+    <div class="ref" id="ref">Dubai buyer brief</div>
+  </header>
+
+  <!-- ------------------------------------------------------ welcome -->
+  <section class="screen on" id="s-welcome">
+    <div class="fan" aria-hidden="true">
+      <img src="img/d1-community.svg" alt="">
+      <img src="img/d1-beach.svg" alt="">
+      <img src="img/d1-marina.svg" alt="">
+    </div>
+    <h1 class="display">Three rounds.<br>No forms.</h1>
+    <p class="lede">
+      Swipe on Dubai property and the questions narrow as you go. By the end
+      <b id="agent-name-1">your agent</b> knows what you want and whether it can be found
+      in your budget, and you never filled in a single drop-down.
+    </p>
+    <ol class="steps-preview">
+      <li><span class="n">1</span><span class="t"><b>Wide net.</b> <span>Marina, Downtown, villas, off-plan. We find your corner.</span></span></li>
+      <li><span class="n">2</span><span class="t"><b>Narrow it.</b> <span>Only what suits the corner you picked.</span></span></li>
+      <li><span class="n">3</span><span class="t"><b>The fussy bit.</b> <span>Pools, majlis, staff room, the deal-breakers.</span></span></li>
+    </ol>
+    <button class="btn push" id="go">Start round one<span class="sub">About ninety seconds</span></button>
+    <details class="agent-setup" id="setup">
+      <summary>Are you the agent? Build your link</summary>
+      <label class="field"><span>Your name</span><input type="text" id="a-name" placeholder="Peter Kiselev"></label>
+      <label class="field"><span>Where briefs get sent</span><input type="email" id="a-email" placeholder="peter@agency.ae"></label>
+      <button class="btn small ghost" id="a-make">Make my link</button>
+      <div class="out" id="a-out" hidden></div>
+    </details>
+  </section>
+
+  <!-- -------------------------------------------------------- brief -->
+  <section class="screen" id="s-brief">
+    <h2 class="display">Who is this for?</h2>
+    <p class="lede">Four things, then we start swiping.</p>
+    <label class="field"><span>Name</span><input type="text" id="f-name" autocomplete="name" maxlength="80" placeholder="Alex Morgan"></label>
+    <label class="field"><span>Email</span><input type="email" id="f-email" autocomplete="email" inputmode="email" maxlength="120" placeholder="alex@email.com"></label>
+    <label class="field"><span>Phone or WhatsApp</span><input type="tel" id="f-phone" autocomplete="tel" maxlength="40" placeholder="+971 50 123 4567"></label>
+    <label class="field"><span>Where in Dubai</span><input type="text" id="f-area" maxlength="120" placeholder="Marina, JVC, or anywhere with a garden"></label>
+    <p class="err" id="e-brief"></p>
+    <button class="btn push" id="to-round">Deal the first six</button>
+  </section>
+
+  <!-- ------------------------------------------------- interstitial -->
+  <section class="screen" id="s-gate">
+    <div class="gate">
+      <div class="rnum" id="g-num">2</div>
+      <h2 class="display" id="g-title">Now we narrow</h2>
+      <p class="lede" id="g-sub"></p>
+      <ul class="learned" id="g-learned"></ul>
+      <p class="narrowing" id="g-note"></p>
+    </div>
+    <button class="btn push" id="g-go">Keep going</button>
+  </section>
+
+  <!-- --------------------------------------------------------- deck -->
+  <section class="screen" id="s-deck">
+    <div class="roundbar">
+      <div class="track"><span class="seg"><i id="seg1"></i></span><span class="seg"><i id="seg2"></i></span><span class="seg"><i id="seg3"></i></span></div>
+      <div class="meta"><span class="name" id="r-name">Round 1 · Wide net</span><span class="count" id="r-count">1 of 6</span></div>
+    </div>
+    <div class="stack-wrap">
+      <div class="stack" id="stack" aria-live="polite"></div>
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+    <div class="pads">
+      <button class="pad no" id="p-no" aria-label="Not for me"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button class="pad undo" id="p-undo" aria-label="Undo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-3"/></svg></button>
+      <button class="pad yes" id="p-yes" aria-label="Yes to this"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5S3.5 15 3.5 9.2A4.7 4.7 0 0 1 12 6.6a4.7 4.7 0 0 1 8.5 2.6c0 5.8-8.5 11.3-8.5 11.3z"/></svg></button>
+    </div>
+    <p class="keys">Drag the card, tap, or use the arrow keys. Z undoes.</p>
+  </section>
+
+  <!-- ----------------------------------------------------- readiness -->
+  <section class="screen" id="s-quick">
+    <div class="q-head"><span class="step" id="q-step">Question 1 of 5</span><span class="step" id="q-left"></span></div>
+    <h2 class="display" id="q-title"></h2>
+    <p class="lede" id="q-sub"></p>
+    <div class="answers" id="q-answers"></div>
+    <div class="row push"><button class="btn ghost small" id="q-back" style="flex:0 0 34%">Back</button></div>
+  </section>
+
+  <!-- -------------------------------------------------------- result -->
+  <section class="screen" id="s-result">
+    <div class="sheet">
+      <div class="sheet-top">
+        <div>
+          <div class="who" id="r-who">Alex Morgan</div>
+          <div class="sub" id="r-contact"></div>
+        </div>
+        <div class="gradestamp"><b id="r-grade">Brief</b><span id="r-score">0/100</span></div>
+      </div>
+      <div class="rows" id="r-rows"></div>
+      <div class="liked" id="r-liked"></div>
+    </div>
+    <button class="btn" id="r-send">Send this to <span id="agent-name-2">my agent</span></button>
+    <div class="row" style="margin-top:9px">
+      <button class="btn ghost small" id="r-copy" style="flex:1">Copy the brief</button>
+      <button class="btn ghost small" id="r-again" style="flex:1">Start again</button>
+    </div>
+    <p class="note" id="r-note"></p>
+  </section>
+</div>
+
+<!-- QUALIFY:START -->
+<script src="qualify.js"></script>
+<!-- QUALIFY:END -->
+
+<script>
+(() => {
+  'use strict';
+  const Q = window.Qualify;
+
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  const S = {
+    agent: { name: 'your agent', email: '' },
+    contact: { name: '', email: '', phone: '' },
+    area: '',
+    round: 0, queue: [], at: 0,
+    swipes: [], branch: 'mixed',
+    answers: {}, qIndex: 0,
+    locked: false,
+    lead: null,            // { id, token } when a server is behind this page
+    syncTimer: null,
+  };
+
+  const QORDER = [
+    { key: 'purpose', title: 'What is it for?', sub: 'Changes what gets sent to you.' },
+    { key: 'budget', title: 'Budget, roughly', sub: 'Nobody holds you to it. It stops you being sent the wrong thing.' },
+    { key: 'payment', title: 'How would it be paid for?', sub: 'The honest answer saves everyone a fortnight.' },
+    { key: 'timeline', title: 'When are you moving?', sub: '' },
+    { key: 'viewing', title: 'Can you view in person?', sub: '' },
+  ];
+
+  /* ------------------------------------------------------ agent link */
+  function readLink() {
+    const q = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    if (q.get('a')) S.agent.name = q.get('a').slice(0, 60);
+    if (q.get('e')) S.agent.email = q.get('e').slice(0, 120);
+    $('#agent-name-1').textContent = S.agent.name;
+    $('#agent-name-2').textContent = S.agent.name === 'your agent' ? 'my agent' : S.agent.name;
+  }
+
+  $('#a-make').addEventListener('click', () => {
+    const q = new URLSearchParams();
+    if ($('#a-name').value.trim()) q.set('a', $('#a-name').value.trim());
+    if ($('#a-email').value.trim()) q.set('e', $('#a-email').value.trim());
+    const link = location.origin + location.pathname + '#' + q.toString();
+    const out = $('#a-out');
+    out.hidden = false;
+    out.textContent = link;
+    navigator.clipboard?.writeText(link).catch(() => {});
+  });
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id));
+    window.scrollTo(0, 0);
+  }
+
+  /* ------------------------------------------------- server, if any */
+  async function api(path, body, ms) {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), ms || 4000);
+    try {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: c.signal,
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) {
+      return null;                     // opened as a file or an artifact: stay local
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  function syncSoon() {
+    if (!S.lead) return;
+    clearTimeout(S.syncTimer);
+    S.syncTimer = setTimeout(() => {
+      api('/api/leads/' + S.lead.id + '/progress', {
+        token: S.lead.token,
+        swipes: S.swipes,
+        branch: S.branch,
+        answers: S.answers,
+      });
+    }, 450);
+  }
+
+  /* --------------------------------------------------------- brief */
+  $('#go').addEventListener('click', () => show('s-brief'));
+
+  $('#to-round').addEventListener('click', async () => {
+    const name = $('#f-name').value.trim();
+    const email = $('#f-email').value.trim();
+    const phone = $('#f-phone').value.trim();
+    const area = $('#f-area').value.trim();
+    if (name.length < 2) return ($('#e-brief').textContent = 'A first name is enough.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return ($('#e-brief').textContent = 'That email does not look right.');
+    if (area.length < 2) return ($('#e-brief').textContent = 'Even a rough area helps.');
+    $('#e-brief').textContent = '';
+    S.contact = { name, email, phone };
+    S.area = area;
+    $('#ref').textContent = 'Brief in progress';
+
+    const btn = $('#to-round');
+    btn.disabled = true;
+    const created = await api('/api/leads', { name, email, phone, area }, 3500);
+    btn.disabled = false;
+    if (created && created.id) S.lead = { id: created.id, token: created.token };
+    startRound(1);
+  });
+
+  /* ---------------------------------------------------------- deck */
+  const nodes = new Map();
+
+  function startRound(n) {
+    S.round = n;
+    S.at = 0;
+    S.queue = Q.buildRound(n, S.branch, S.swipes);
+    $('#r-name').textContent = Q.ROUND_NAME[n - 1];
+    show('s-deck');
+    render();
+    chrome();
+  }
+
+  function build(id) {
+    const card = Q.CARDS[id];
+    const n = el('article', 'card');
+    n.dataset.id = id;
+    const media = el('div', 'media');
+    const img = el('img');
+    img.src = 'img/' + id + '.svg';
+    img.alt = card.t;
+    img.draggable = false;
+    media.appendChild(img);
+    const body = el('div', 'body');
+    body.appendChild(el('span', 'kicker', card.f[0]));
+    body.appendChild(el('h3', '', card.t));
+    body.appendChild(el('p', '', card.c));
+    n.append(media, body, el('div', 'stamp yes', 'Yes'), el('div', 'stamp no', 'Nope'));
+    return n;
+  }
+
+  function render() {
+    const view = S.queue.slice(S.at, S.at + 3);
+    const keep = new Set(view);
+    for (const [id, n] of nodes) if (!keep.has(id)) { n.remove(); nodes.delete(id); }
+    for (let i = view.length - 1; i >= 0; i -= 1) {
+      const id = view[i];
+      let n = nodes.get(id);
+      if (!n) { n = build(id); nodes.set(id, n); }
+      n.className = 'card' + (i === 1 ? ' b1' : i === 2 ? ' b2' : '');
+      n.style.transform = '';
+      n.setAttribute('aria-hidden', i === 0 ? 'false' : 'true');
+      $('#stack').appendChild(n);
+    }
+    const next = S.queue[S.at + 3];
+    if (next) new Image().src = 'img/' + next + '.svg';
+  }
+
+  function chrome() {
+    const total = S.queue.length;
+    const done = Math.min(S.at, total);
+    $('#r-count').textContent = done >= total ? total + ' of ' + total : (done + 1) + ' of ' + total;
+    for (let r = 1; r <= 3; r += 1) {
+      $('#seg' + r).style.width = (r < S.round ? 100 : r > S.round ? 0 : total ? (done / total) * 100 : 0) + '%';
+    }
+    $('#p-undo').disabled = S.at === 0;
+  }
+
+  function top() {
+    const live = $('#stack').querySelectorAll('.card:not(.gone)');
+    return live.length ? live[live.length - 1] : null;
+  }
+
+  const YES_LINES = ['Noted.', 'Good taste.', 'Filed under yes.', 'Adding that.'];
+  const NO_LINES = ['Crossed off.', 'Never again.', 'Fair enough.', 'Struck out.'];
+
+  function commit(dir, node) {
+    if (S.locked) return;
+    const id = S.queue[S.at];
+    if (!id || !node) return;
+    S.locked = true;
+    S.swipes = S.swipes.filter((s) => s.id !== id);
+    S.swipes.push({ id: id, dir: dir, round: S.round });
+    S.at += 1;
+    nodes.delete(id);
+    const sign = dir === 'y' ? 1 : -1;
+    node.classList.add('gone');
+    node.style.transform = 'translate(' + sign * (window.innerWidth + 180) + 'px, -40px) rotate(' + sign * 24 + 'deg)';
+    node.querySelector(dir === 'y' ? '.stamp.yes' : '.stamp.no').style.opacity = 1;
+    setTimeout(() => node.remove(), 380);
+    navigator.vibrate?.(dir === 'y' ? 14 : 9);
+    say(dir === 'y' ? YES_LINES : NO_LINES);
+    render();
+    chrome();
+    syncSoon();
+    setTimeout(() => {
+      S.locked = false;
+      if (S.at >= S.queue.length) endRound();
+    }, 170);
+  }
+
+  function undo() {
+    if (S.locked || S.at === 0) return;
+    S.at -= 1;
+    S.swipes.pop();
+    const id = S.queue[S.at];
+    nodes.delete(id);
+    render();
+    const n = nodes.get(id);
+    if (n) n.classList.add('back');
+    chrome();
+    syncSoon();
+    say(['Second look.']);
+  }
+
+  let toastT = null;
+  function say(lines) {
+    const left = S.queue.length - S.at;
+    const t = $('#toast');
+    t.textContent = left === 1 ? 'One more.' : lines[Math.floor(Math.random() * lines.length)];
+    t.classList.add('on');
+    clearTimeout(toastT);
+    toastT = setTimeout(() => t.classList.remove('on'), 1000);
+  }
+
+  /* ------------------------------------------------------- dragging */
+  const D = { on: false, id: null, x: 0, y: 0, dx: 0, t: 0, node: null };
+
+  $('#stack').addEventListener('pointerdown', (e) => {
+    if (S.locked || D.on) return;
+    const n = top();
+    if (!n || !n.contains(e.target)) return;
+    D.on = true; D.id = e.pointerId; D.node = n;
+    D.x = e.clientX; D.y = e.clientY; D.dx = 0; D.t = Date.now();
+    n.classList.remove('settle');
+    n.setPointerCapture?.(e.pointerId);
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!D.on || e.pointerId !== D.id) return;
+    D.dx = e.clientX - D.x;
+    const dy = e.clientY - D.y;
+    D.node.style.transform = 'translate(' + D.dx + 'px, ' + dy * 0.35 + 'px) rotate(' + Math.max(-15, Math.min(15, D.dx * 0.05)) + 'deg)';
+    const k = Math.min(1, Math.abs(D.dx) / 85);
+    D.node.querySelector('.stamp.yes').style.opacity = D.dx > 0 ? k : 0;
+    D.node.querySelector('.stamp.no').style.opacity = D.dx < 0 ? k : 0;
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  function release(e) {
+    if (!D.on || e.pointerId !== D.id) return;
+    const n = D.node, dx = D.dx;
+    const v = dx / Math.max(1, Date.now() - D.t);
+    D.on = false; D.node = null;
+    if (Math.abs(dx) > Math.max(76, n.offsetWidth * 0.26) || (Math.abs(v) > 0.55 && Math.abs(dx) > 34)) {
+      commit(dx > 0 ? 'y' : 'n', n);
+    } else {
+      n.classList.add('settle');
+      n.style.transform = '';
+      n.querySelectorAll('.stamp').forEach((s) => { s.style.opacity = 0; });
+    }
+  }
+  window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
+
+  $('#p-yes').addEventListener('click', () => commit('y', top()));
+  $('#p-no').addEventListener('click', () => commit('n', top()));
+  $('#p-undo').addEventListener('click', undo);
+
+  window.addEventListener('keydown', (e) => {
+    if (!$('#s-deck').classList.contains('on')) return;
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); commit('y', top()); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); commit('n', top()); }
+    if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); undo(); }
+  });
+
+  /* -------------------------------------------- between the rounds */
+  function endRound() {
+    if (S.round === 1) { S.branch = Q.decideBranch(S.swipes); syncSoon(); gate(2); }
+    else if (S.round === 2) gate(3);
+    else askQuestion(0);
+  }
+
+  function gate(next) {
+    const yes = Q.likes(S.swipes, S.round);
+    const learned = $('#g-learned');
+    learned.innerHTML = '';
+    $('#g-num').textContent = String(next);
+    $('#g-title').textContent = next === 2 ? 'Now we narrow' : 'The fussy bit';
+
+    if (next === 2) {
+      $('#g-sub').textContent = yes.length
+        ? 'You leaned towards ' + Q.BRANCH_NAME[S.branch] + '. The next six are picked for that, not for everyone.'
+        : 'You passed on all six, which is useful too. The next six come at it from another angle.';
+      yes.forEach((s) => learned.appendChild(el('li', '', '✓ ' + Q.CARDS[s.id].t)));
+      if (!yes.length) learned.appendChild(el('li', '', '✗ None of the six'));
+      $('#g-note').textContent = 'Six more cards, then five quick taps.';
+    } else {
+      const f = Q.facets(Q.likes(S.swipes, 2).map((s) => ({ id: s.id, dir: 'y' })));
+      $('#g-sub').textContent = 'Water, work and the deal-breakers. This round decides what actually gets sent to you.';
+      f.want.forEach((row) => learned.appendChild(el('li', '', row.key + ': ' + row.values.join(', '))));
+      if (!f.want.length) learned.appendChild(el('li', '', 'Nothing in round two landed, so we keep it broad.'));
+      $('#g-note').textContent = 'Last six cards.';
+    }
+    $('#g-go').textContent = next === 2 ? 'Deal round two' : 'Deal round three';
+    $('#g-go').onclick = () => startRound(next);
+    show('s-gate');
+  }
+
+  /* ------------------------------------------------------ readiness */
+  function askQuestion(i) {
+    if (i >= QORDER.length) return result();
+    S.qIndex = i;
+    const spec = QORDER[i];
+    const group = Q.QUESTIONS[spec.key];
+    $('#q-step').textContent = 'Question ' + (i + 1) + ' of ' + QORDER.length;
+    $('#q-left').textContent = i === QORDER.length - 1 ? 'Last one' : '';
+    $('#q-title').textContent = spec.title;
+    $('#q-sub').textContent = spec.sub;
+    const wrap = $('#q-answers');
+    wrap.innerHTML = '';
+    group.options.forEach((o) => {
+      const b = el('button', 'answer');
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(S.answers[spec.key] === o.id));
+      b.appendChild(el('span', '', o.l));
+      b.appendChild(el('span', 'tick', '✓'));
+      b.addEventListener('click', () => {
+        S.answers[spec.key] = o.id;
+        wrap.querySelectorAll('.answer').forEach((a) => a.setAttribute('aria-checked', 'false'));
+        b.setAttribute('aria-checked', 'true');
+        syncSoon();
+        setTimeout(() => askQuestion(i + 1), 190);
+      });
+      wrap.appendChild(b);
+    });
+    $('#q-back').onclick = () => (i === 0 ? startRound(3) : askQuestion(i - 1));
+    $('#q-back').textContent = i === 0 ? 'Back to cards' : 'Back';
+    show('s-quick');
+  }
+
+  /* --------------------------------------------------------- result */
+  function lead() {
+    return {
+      contact: S.contact,
+      area: S.area,
+      swipes: S.swipes,
+      branch: S.branch,
+      answers: S.answers,
+    };
+  }
+
+  function result() {
+    const h = Q.hotness(lead());
+    const f = Q.facets(S.swipes);
+    $('#r-who').textContent = S.contact.name;
+    $('#r-contact').textContent = [S.contact.email, S.contact.phone, S.area].filter(Boolean).join(' · ');
+    $('#r-grade').textContent = h.label;
+    $('#r-score').textContent = h.value + '/100';
+    $('#ref').textContent = 'Brief complete';
+
+    const rows = $('#r-rows');
+    rows.innerHTML = '';
+    const add = (k, v, muted) => {
+      if (!v) return;
+      const d = el('div');
+      d.appendChild(el('span', 'k', k));
+      const s = el('span', 'v');
+      if (muted) s.appendChild(el('em', '', v)); else s.textContent = v;
+      d.appendChild(s);
+      rows.appendChild(d);
+    };
+    add('Budget', (Q.option('budget', S.answers.budget) || {}).l);
+    add('For', (Q.option('purpose', S.answers.purpose) || {}).l);
+    add('Funds', (Q.option('payment', S.answers.payment) || {}).l);
+    add('Timing', (Q.option('timeline', S.answers.timeline) || {}).l);
+    add('Viewing', (Q.option('viewing', S.answers.viewing) || {}).l);
+    add('Leans', Q.BRANCH_NAME[S.branch]);
+    f.want.forEach((row) => add(row.key, row.values.join(', ')));
+    if (f.no.length) {
+      const flat = f.no.reduce((all, row) => all.concat(row.values), []);
+      add('Ruled out', flat.slice(0, 6).join(' · ') + (flat.length > 6 ? ' and ' + (flat.length - 6) + ' more' : ''), true);
+    }
+
+    const strip = $('#r-liked');
+    strip.innerHTML = '';
+    Q.likes(S.swipes).forEach((s) => {
+      const fig = el('figure');
+      const img = el('img');
+      img.src = 'img/' + s.id + '.svg';
+      img.alt = Q.CARDS[s.id].t;
+      fig.appendChild(img);
+      fig.appendChild(el('figcaption', '', Q.CARDS[s.id].t));
+      strip.appendChild(fig);
+    });
+
+    const mismatch = h.flags.find((x) => x.tone === 'bad' && /Budget will not reach/.test(x.text));
+    $('#r-note').textContent = mismatch
+      ? 'One thing worth knowing: ' + mismatch.text.replace('Budget will not reach the taste: liked', 'you liked') + '. Your agent will show you the closest thing that fits.'
+      : S.agent.email
+        ? 'Opens your mail app with everything filled in. Nothing sends until you press send.'
+        : 'This link has no agent email set, so the button copies the brief for you to paste.';
+
+    if (S.lead) api('/api/leads/' + S.lead.id + '/finish', { token: S.lead.token, swipes: S.swipes, branch: S.branch, answers: S.answers });
+    if (!S.agent.email) $('#r-send').textContent = 'Copy my brief to send';
+    show('s-result');
+  }
+
+  $('#r-send').addEventListener('click', () => {
+    const body = Q.briefText(lead());
+    if (S.agent.email) {
+      window.location.href = 'mailto:' + encodeURIComponent(S.agent.email)
+        + '?subject=' + encodeURIComponent('Dubai property brief: ' + S.contact.name + ' (' + S.area + ')')
+        + '&body=' + encodeURIComponent(body + '\n\nSent from the swipe brief.\n');
+    } else {
+      navigator.clipboard?.writeText(body);
+      $('#r-note').textContent = 'Brief copied. Paste it to your agent.';
+    }
+  });
+
+  $('#r-copy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(Q.briefText(lead()));
+      $('#r-copy').textContent = 'Copied';
+      setTimeout(() => { $('#r-copy').textContent = 'Copy the brief'; }, 1400);
+    } catch (_) {
+      $('#r-note').textContent = 'Copying is blocked here. Screenshot the sheet instead.';
+    }
+  });
+
+  $('#r-again').addEventListener('click', () => {
+    S.swipes = []; S.at = 0; S.round = 0; S.branch = 'mixed'; S.answers = {}; S.lead = null;
+    nodes.forEach((n) => n.remove());
+    nodes.clear();
+    $('#ref').textContent = 'Dubai buyer brief';
+    show('s-welcome');
+  });
+
+  readLink();
+})();
+</script>

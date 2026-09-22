@@ -97,6 +97,34 @@ function poplar(x, baseY, h, leaf = C.leaf) {
   </g>`;
 }
 
+/** Date palm: curved trunk with segment rings and a crown of fronds. */
+function palm(x, baseY, h, lean = 0, frondFill = '#3f9c6b') {
+  const topX = x + lean;
+  const topY = baseY - h;
+  let rings = '';
+  for (let i = 1; i < 8; i += 1) {
+    const t = i / 8;
+    rings += `<line x1="${(x + lean * t - 9 + t * 3).toFixed(1)}" y1="${(baseY - h * t).toFixed(1)}" x2="${(x + lean * t + 9 - t * 3).toFixed(1)}" y2="${(baseY - h * t).toFixed(1)}" stroke="#7a5a3f" stroke-width="3"/>`;
+  }
+  const fronds = [
+    [-1.15, -0.25], [-0.95, -0.62], [-0.5, -0.92], [0.5, -0.92], [0.95, -0.62], [1.15, -0.25], [0, -1.05],
+  ]
+    .map(([dx, dy]) => {
+      const ex = topX + dx * h * 0.42;
+      const ey = topY + dy * h * 0.3;
+      const cx = topX + dx * h * 0.24;
+      const cy = topY + dy * h * 0.34 - h * 0.1;
+      return `<path d="M${topX} ${topY} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)} Q${(cx + dx * 6).toFixed(1)} ${(cy + 16).toFixed(1)} ${topX} ${topY} Z" fill="${frondFill}"/>`;
+    })
+    .join('');
+  return `<g>
+    <path d="M${x} ${baseY} Q${x + lean * 0.3} ${baseY - h * 0.55} ${topX} ${topY}" stroke="#8a6142" stroke-width="${Math.max(10, h * 0.075)}" fill="none" stroke-linecap="round"/>
+    ${rings}
+    ${fronds}
+    <circle cx="${topX}" cy="${topY}" r="${h * 0.05}" fill="#6b4a33"/>
+  </g>`;
+}
+
 function bush(x, y, r, fill = C.leafMid) {
   return `<g fill="${fill}"><circle cx="${x - r * 0.6}" cy="${y}" r="${r * 0.7}"/><circle cx="${x + r * 0.6}" cy="${y}" r="${r * 0.65}"/><circle cx="${x}" cy="${y - r * 0.3}" r="${r}"/></g>`;
 }
@@ -1115,17 +1143,361 @@ scenes['extra-gym'] = () => {
   );
 };
 
+/* --------------------------------------------------- Dubai round one */
+
+scenes['d1-marina'] = () => {
+  const s = sky('sky', '#ffd9a8', '#fdf1de');
+  const tower = (x, w, h, tone) => `<g>
+    <rect x="${x}" y="${420 - h}" width="${w}" height="${h}" rx="6" fill="${tone}"/>
+    ${windowGrid(x, 420 - h + 14, w, h - 28, Math.max(2, Math.round(w / 26)), Math.round(h / 34), 'rgba(255,255,255,0.32)', 6)}
+    <rect x="${x - 5}" y="${412 - h}" width="${w + 10}" height="12" rx="5" fill="#ffffff" opacity="0.5"/>
+  </g>`;
+  return svg(
+    `${s.def}${linear('water', '#4bb6d8', '#1d7fae')}${linear('t1', '#9fc3d8', '#5d89a8')}${linear('t2', '#c3d8e4', '#7fa2bb')}`,
+    `${s.body}${sun(150, 128, 54, '#ffb27a')}
+    ${tower(60, 92, 300, 'url(#t1)')}${tower(166, 74, 236, 'url(#t2)')}
+    ${tower(256, 104, 360, 'url(#t2)')}${tower(374, 84, 270, 'url(#t1)')}
+    ${tower(472, 118, 330, 'url(#t2)')}${tower(604, 96, 250, 'url(#t1)')}
+    ${tower(712, 78, 300, 'url(#t2)')}
+    <rect x="0" y="416" width="${W}" height="30" fill="#efe3cd"/>
+    <rect x="0" y="440" width="${W}" height="12" fill="#ded1b8"/>
+    <rect x="0" y="452" width="${W}" height="148" fill="url(#water)"/>
+    <g opacity="0.55" fill="#ffffff">
+      ${Array.from({ length: 7 }, (_, i) => `<path d="M${40 + i * 118} ${486 + (i % 3) * 26} q 26 -12 52 0 q -26 12 -52 0" />`).join('')}
+    </g>
+    <g>
+      <path d="M300 520 L470 520 L446 556 L324 556 Z" fill="#f6f1e6"/>
+      <rect x="352" y="486" width="66" height="34" rx="6" fill="#dfe8ee"/>
+      <rect x="380" y="452" width="8" height="36" fill="#9aa7b4"/>
+    </g>
+    ${palm(78, 446, 150, -16)}${palm(148, 448, 120, 10)}
+    ${palm(690, 448, 140, 14)}${palm(752, 444, 112, -10)}
+    <g opacity="0.3">${Array.from({ length: 5 }, (_, i) => `<ellipse cx="${120 + i * 150}" cy="446" rx="46" ry="6" fill="${C.ink}"/>`).join('')}</g>`
+  );
+};
+
+scenes['d1-downtown'] = () => {
+  const s = sky('sky', '#8fb6dd', '#ffe3c2');
+  const block = (x, w, h, tone) => `<g>
+    <rect x="${x}" y="${470 - h}" width="${w}" height="${h}" fill="${tone}"/>
+    ${windowGrid(x, 470 - h + 10, w, h - 20, Math.max(2, Math.round(w / 24)), Math.max(3, Math.round(h / 40)), 'rgba(255,255,255,0.3)', 5)}
+  </g>`;
+  return svg(
+    `${s.def}${linear('spire', '#e6eef5', '#8fb0c8')}${linear('b1', '#7f9bb5', '#4f6f8c')}${linear('b2', '#a3bccd', '#6b8ca6')}`,
+    `${s.body}${sun(668, 150, 46, '#ffce9a')}
+    ${block(40, 90, 210, 'url(#b1)')}${block(140, 70, 150, 'url(#b2)')}
+    ${block(560, 86, 180, 'url(#b2)')}${block(660, 110, 250, 'url(#b1)')}
+    ${block(228, 80, 120, 'url(#b2)')}${block(470, 74, 160, 'url(#b1)')}
+    <g>
+      <path d="M330 470 L352 180 L400 96 L448 180 L470 470 Z" fill="url(#spire)"/>
+      <path d="M400 96 L400 470" stroke="#ffffff" stroke-width="4" opacity="0.6"/>
+      ${Array.from({ length: 14 }, (_, i) => `<line x1="${344 + i * 0.6}" y1="${200 + i * 19}" x2="${456 - i * 0.6}" y2="${200 + i * 19}" stroke="#ffffff" stroke-width="3" opacity="0.45"/>`).join('')}
+      <rect x="396" y="60" width="8" height="42" fill="#dfe8ee"/>
+    </g>
+    <rect x="0" y="470" width="${W}" height="130" fill="#e8dcc6"/>
+    <rect x="0" y="470" width="${W}" height="12" fill="#d3c6ae"/>
+    <rect x="0" y="516" width="${W}" height="54" fill="#8d9aa8"/>
+    ${Array.from({ length: 8 }, (_, i) => `<rect x="${20 + i * 104}" y="540" width="52" height="7" rx="3" fill="#f2ede2"/>`).join('')}
+    ${palm(92, 516, 132, -12)}${palm(180, 512, 104, 8)}${palm(640, 514, 122, 10)}${palm(724, 518, 142, -14)}
+    <g>
+      <rect x="300" y="482" width="200" height="28" rx="8" fill="#f6f1e6"/>
+      <rect x="318" y="490" width="164" height="12" rx="6" fill="#cfc3ae"/>
+    </g>`
+  );
+};
+
+scenes['d1-community'] = () => {
+  const s = sky('sky', '#cfe6f7', '#fdf3e2');
+  const villa = (x, w, h, tone) => `<g>
+    <rect x="${x}" y="${430 - h}" width="${w}" height="${h}" fill="${tone}"/>
+    <rect x="${x - 10}" y="${430 - h - 16}" width="${w + 20}" height="18" rx="4" fill="#e8dcc6"/>
+    <rect x="${x + w * 0.1}" y="${430 - h + 22}" width="${w * 0.3}" height="${h * 0.34}" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="5"/>
+    <rect x="${x + w * 0.56}" y="${430 - h + 22}" width="${w * 0.3}" height="${h * 0.34}" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="5"/>
+    <rect x="${x + w * 0.38}" y="${430 - h * 0.42}" width="${w * 0.24}" height="${h * 0.42}" rx="4" fill="#8a6142"/>
+  </g>`;
+  return svg(
+    `${s.def}${linear('render', '#fbf6ec', '#eadfc9')}`,
+    `${s.body}${sun(680, 116, 48)}${cloud(180, 112, 0.8, 0.5)}
+    <rect x="0" y="430" width="${W}" height="170" fill="#7ec89a"/>
+    ${villa(70, 240, 160, 'url(#render)')}
+    ${villa(360, 210, 140, '#f5eddf')}
+    ${villa(620, 180, 150, 'url(#render)')}
+    <rect x="0" y="466" width="${W}" height="18" fill="#e2d8c4"/>
+    <rect x="0" y="506" width="${W}" height="94" fill="#d8d0c0"/>
+    <rect x="0" y="506" width="${W}" height="10" fill="#c5bba8"/>
+    ${Array.from({ length: 7 }, (_, i) => `<rect x="${30 + i * 118}" y="550" width="60" height="7" rx="3" fill="#f2ede2"/>`).join('')}
+    ${palm(40, 500, 150, -12)}${palm(316, 502, 132, 10)}${palm(586, 498, 144, -8)}${palm(770, 504, 126, 12)}
+    ${bush(210, 494, 26)}${bush(470, 496, 30, C.leafLight)}${bush(690, 492, 24)}
+    <g>
+      <rect x="196" y="440" width="140" height="10" rx="5" fill="#efe4d2"/>
+      <rect x="206" y="450" width="10" height="26" fill="#d9ccb8"/><rect x="316" y="450" width="10" height="26" fill="#d9ccb8"/>
+    </g>`
+  );
+};
+
+scenes['d1-beach'] = () => {
+  const s = sky('sky', '#bfe4ff', '#fdf0d9');
+  return svg(
+    `${s.def}${linear('sea', '#5cc8e0', '#1f8fbc')}${linear('sand', '#f6e7cc', '#e6d2ae')}`,
+    `${s.body}${sun(150, 120, 52, '#ffd9a0')}
+    <rect x="0" y="250" width="${W}" height="120" fill="url(#sea)"/>
+    <g opacity="0.5" fill="#ffffff">
+      ${Array.from({ length: 8 }, (_, i) => `<path d="M${20 + i * 104} ${288 + (i % 3) * 22} q 24 -10 48 0 q -24 10 -48 0"/>`).join('')}
+    </g>
+    <path d="M0 362 q 120 22 240 6 t 240 8 t 320 -6 L800 600 L0 600 Z" fill="url(#sand)"/>
+    <path d="M0 356 q 120 24 240 8 t 240 8 t 320 -6 L800 380 L0 380 Z" fill="#ffffff" opacity="0.65"/>
+    <g>
+      <rect x="420" y="250" width="340" height="150" fill="#fbf7ee"/>
+      <rect x="406" y="236" width="368" height="20" rx="5" fill="#f1e8d8"/>
+      <rect x="450" y="276" width="120" height="104" rx="5" fill="#bcdcee" stroke="#ffffff" stroke-width="7"/>
+      <rect x="596" y="276" width="130" height="104" rx="5" fill="#cfe4f0" stroke="#ffffff" stroke-width="7"/>
+      <line x1="661" y1="276" x2="661" y2="380" stroke="#ffffff" stroke-width="7"/>
+      <rect x="406" y="396" width="368" height="14" rx="5" fill="#ece1ce"/>
+    </g>
+    ${palm(120, 470, 210, -22)}${palm(250, 440, 160, 16)}${palm(700, 460, 170, 14)}
+    ${lounger(320, 470, 1)}${parasol(300, 462, 0.95, '#e8a25c')}
+    ${lounger(470, 512, 1)}
+    <g opacity="0.22"><ellipse cx="360" cy="486" rx="90" ry="12" fill="${C.ink}"/></g>
+    <g fill="#e8d4b0" opacity="0.8">
+      <circle cx="600" cy="520" r="5"/><circle cx="640" cy="540" r="4"/><circle cx="560" cy="556" r="6"/>
+    </g>`
+  );
+};
+
+scenes['d1-golf'] = () => {
+  const s = sky('sky', '#cfe9ff', '#f8fbff');
+  return svg(
+    `${s.def}${linear('green', '#8ed4a4', '#5cb37f')}${linear('render', '#fbf6ec', '#ecdfc9')}`,
+    `${s.body}${sun(130, 110, 44)}${cloud(620, 104, 0.9, 0.55)}
+    <rect x="0" y="300" width="${W}" height="300" fill="url(#green)"/>
+    <path d="M0 300 q 200 -34 400 -6 t 400 -14 L800 340 L0 340 Z" fill="#6fc48f"/>
+    <g opacity="0.45">
+      ${Array.from({ length: 5 }, (_, i) => `<path d="M${-60 + i * 190} 600 q 160 -140 340 -206" stroke="#7ecb99" stroke-width="34" fill="none"/>`).join('')}
+    </g>
+    <g>
+      <rect x="440" y="196" width="300" height="140" fill="url(#render)"/>
+      <rect x="426" y="182" width="328" height="18" rx="5" fill="#eadfc9"/>
+      <rect x="470" y="222" width="110" height="88" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="6"/>
+      <rect x="606" y="222" width="110" height="88" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="6"/>
+      <rect x="560" y="290" width="70" height="46" rx="4" fill="#8a6142"/>
+    </g>
+    <ellipse cx="250" cy="452" rx="170" ry="58" fill="#a8e0bc"/>
+    <ellipse cx="250" cy="452" rx="120" ry="38" fill="#bdead0"/>
+    <circle cx="250" cy="448" r="9" fill="#3d5a48"/>
+    <g>
+      <rect x="246" y="330" width="6" height="120" fill="#f4f0e6"/>
+      <path d="M252 330 L320 348 L252 368 Z" fill="#d94f43"/>
+    </g>
+    <g transform="translate(600 452)">
+      <rect x="-54" y="-40" width="108" height="34" rx="8" fill="#f6f1e6"/>
+      <rect x="-48" y="-64" width="96" height="26" rx="8" fill="#e6dccb"/>
+      <rect x="-58" y="-6" width="116" height="12" rx="6" fill="#cfc3ae"/>
+      <circle cx="-34" cy="12" r="14" fill="#3d4a5c"/><circle cx="34" cy="12" r="14" fill="#3d4a5c"/>
+    </g>
+    ${palm(80, 470, 190, -16)}${palm(700, 486, 160, 12)}${palm(770, 478, 130, -10)}
+    ${bush(400, 402, 26)}${bush(150, 380, 22, C.leafLight)}`
+  );
+};
+
+scenes['d1-offplan'] = () => {
+  const s = sky('sky', '#d5e8f5', '#fbf3e6');
+  let floors = '';
+  for (let i = 0; i < 7; i += 1) {
+    const y = 420 - i * 46;
+    floors += `<rect x="250" y="${y - 10}" width="220" height="10" fill="#b9b2a4"/>`;
+    for (let c = 0; c < 5; c += 1) floors += `<rect x="${258 + c * 44}" y="${y - 44}" width="10" height="34" fill="#c9c2b4"/>`;
+  }
+  return svg(
+    `${s.def}${linear('hoard', '#2f6f8f', '#1d4f6b')}`,
+    `${s.body}${cloud(600, 104, 0.85, 0.5)}${sun(120, 112, 42)}
+    <rect x="0" y="470" width="${W}" height="130" fill="#ddd4c2"/>
+    <g>
+      <rect x="238" y="98" width="244" height="330" fill="#eee7d9" opacity="0.65"/>
+      ${floors}
+      <rect x="238" y="96" width="244" height="14" fill="#a9a294"/>
+      <g opacity="0.7">
+        ${Array.from({ length: 8 }, (_, i) => `<line x1="238" y1="${120 + i * 40}" x2="482" y2="${120 + i * 40}" stroke="#cfc7b8" stroke-width="3"/>`).join('')}
+        ${Array.from({ length: 5 }, (_, i) => `<line x1="${250 + i * 56}" y1="110" x2="${250 + i * 56}" y2="428" stroke="#cfc7b8" stroke-width="3"/>`).join('')}
+      </g>
+    </g>
+    <g>
+      <rect x="520" y="70" width="16" height="400" fill="#e0a43c"/>
+      <rect x="300" y="70" width="330" height="14" fill="#e0a43c"/>
+      <path d="M528 84 L528 70 L600 70 L528 140 Z" fill="none" stroke="#e0a43c" stroke-width="8"/>
+      <line x1="360" y1="84" x2="360" y2="210" stroke="#8d9aa8" stroke-width="4"/>
+      <rect x="336" y="210" width="48" height="34" rx="4" fill="#c9c2b4"/>
+      <rect x="500" y="56" width="56" height="20" rx="4" fill="#c58c2e"/>
+    </g>
+    <g>
+      <rect x="40" y="356" width="196" height="114" rx="4" fill="url(#hoard)"/>
+      <rect x="52" y="368" width="172" height="66" rx="3" fill="#cfe4f0"/>
+      <path d="M60 434 L104 392 L148 434 Z" fill="#8fb9d9"/>
+      <rect x="152" y="396" width="34" height="38" fill="#a9cbe2"/>
+      <rect x="52" y="442" width="110" height="10" rx="5" fill="#9fc3d8"/>
+      <rect x="36" y="348" width="204" height="12" rx="4" fill="#173f57"/>
+    </g>
+    <g>
+      <rect x="0" y="466" width="${W}" height="12" fill="#c5bba8"/>
+      ${Array.from({ length: 6 }, (_, i) => `<g transform="translate(${560 + i * 40} 500)"><path d="M-12 0 L12 0 L7 -30 L-7 -30 Z" fill="#e0783c"/><rect x="-16" y="0" width="32" height="7" rx="3" fill="#c25f28"/></g>`).join('')}
+    </g>
+    ${palm(700, 520, 140, 12)}${palm(760, 514, 118, -10)}
+    <g opacity="0.25"><ellipse cx="360" cy="480" rx="180" ry="14" fill="${C.ink}"/></g>`
+  );
+};
+
+/* ------------------------------------------------- Dubai round two */
+
+scenes['a-seaview'] = () => {
+  const s = sky('sky', '#ffd7a4', '#fdefdc');
+  return svg(
+    `${s.def}${linear('sea', '#54c0dc', '#1e86b4')}${linear('floor', '#e8dcc6', '#cdbfa6')}`,
+    `${s.body}
+    <rect x="0" y="0" width="${W}" height="600" fill="#f6f1e6"/>
+    <g>
+      <rect x="60" y="40" width="680" height="404" fill="#fdf8ef"/>
+      <rect x="92" y="72" width="616" height="340" rx="4" fill="url(#sky)"/>
+      <rect x="92" y="286" width="616" height="126" fill="url(#sea)"/>
+      <circle cx="560" cy="212" r="52" fill="#ffb478"/>
+      <g opacity="0.5" fill="#ffffff">
+        ${Array.from({ length: 6 }, (_, i) => `<path d="M${120 + i * 100} ${322 + (i % 3) * 24} q 22 -9 44 0 q -22 9 -44 0"/>`).join('')}
+      </g>
+      <g opacity="0.75" fill="#7f9db5">
+        <rect x="110" y="212" width="40" height="76"/><rect x="160" y="240" width="30" height="48"/>
+        <rect x="640" y="228" width="36" height="60"/>
+      </g>
+      <line x1="400" y1="72" x2="400" y2="412" stroke="#fdf8ef" stroke-width="14"/>
+      <rect x="84" y="60" width="632" height="16" rx="5" fill="#f0e7d6"/>
+      <rect x="84" y="408" width="632" height="16" rx="5" fill="#f0e7d6"/>
+    </g>
+    <g>
+      <rect x="92" y="330" width="616" height="8" rx="4" fill="#cfd9e4" opacity="0.9"/>
+      ${Array.from({ length: 20 }, (_, i) => `<rect x="${104 + i * 31}" y="330" width="6" height="80" rx="3" fill="#cfd9e4" opacity="0.85"/>`).join('')}
+    </g>
+    <rect x="0" y="444" width="${W}" height="156" fill="url(#floor)"/>
+    ${Array.from({ length: 6 }, (_, i) => `<line x1="0" y1="${466 + i * 26}" x2="800" y2="${466 + i * 26}" stroke="#c3b59c" stroke-width="3"/>`).join('')}
+    <g>
+      <rect x="180" y="452" width="150" height="20" rx="10" fill="#efe4d2"/>
+      <rect x="196" y="472" width="14" height="52" fill="#d9ccb8"/><rect x="300" y="472" width="14" height="52" fill="#d9ccb8"/>
+      <rect x="164" y="470" width="34" height="40" rx="10" fill="#f6efe2"/>
+    </g>
+    ${potted(560, 520, 0.9)}
+    <g><rect x="380" y="466" width="110" height="16" rx="8" fill="#e6dccb"/><circle cx="435" cy="452" r="14" fill="#f2e4c2"/></g>`
+  );
+};
+
+scenes['a-highfloor'] = () => {
+  const s = sky('sky', '#2d4a72', '#ffb98c');
+  return svg(
+    `${s.def}${linear('rail', '#d7e2ea', '#9fb0bd')}`,
+    `${s.body}${sun(640, 180, 52, '#ffce9a')}
+    <g opacity="0.85">
+      ${Array.from({ length: 16 }, (_, i) => {
+        const h = 40 + ((i * 53) % 130);
+        return `<rect x="${i * 52}" y="${470 - h}" width="42" height="${h}" fill="${i % 2 ? '#3d5a7d' : '#4a6b90'}"/>`;
+      }).join('')}
+    </g>
+    <g fill="#ffd97a" opacity="0.9">
+      ${Array.from({ length: 30 }, (_, i) => `<rect x="${14 + (i * 47) % 780}" y="${390 + ((i * 29) % 70)}" width="6" height="8"/>`).join('')}
+    </g>
+    <rect x="0" y="470" width="${W}" height="130" fill="#2b3a4e"/>
+    <rect x="0" y="464" width="${W}" height="12" fill="#1f2c3c"/>
+    <g>
+      <rect x="0" y="300" width="${W}" height="12" rx="6" fill="url(#rail)"/>
+      ${Array.from({ length: 26 }, (_, i) => `<rect x="${12 + i * 31}" y="300" width="7" height="170" rx="3" fill="url(#rail)" opacity="0.9"/>`).join('')}
+      <rect x="0" y="288" width="${W}" height="10" rx="5" fill="#eef3f7"/>
+    </g>
+    <g>
+      <rect x="250" y="486" width="300" height="18" rx="9" fill="#f2ead9"/>
+      <rect x="272" y="504" width="14" height="52" fill="#cdbfa6"/><rect x="514" y="504" width="14" height="52" fill="#cdbfa6"/>
+      <rect x="236" y="500" width="36" height="46" rx="10" fill="#f6efe2"/><rect x="528" y="500" width="36" height="46" rx="10" fill="#f6efe2"/>
+      <circle cx="400" cy="474" r="14" fill="#e0783c"/>
+    </g>
+    ${potted(120, 540, 0.85)}${potted(690, 546, 0.9)}`
+  );
+};
+
+scenes['v-majlis'] = () => {
+  const s = sky('sky', '#f7f0e2', '#efe4d0');
+  const arch = (x, w, h, y) => `<path d="M${x} ${y} L${x} ${y - h + w / 2} A${w / 2} ${w / 2} 0 0 1 ${x + w} ${y - h + w / 2} L${x + w} ${y} Z"`;
+  return svg(
+    `${s.def}${linear('rug', '#b8543f', '#8c3a2c')}${linear('wall', '#fbf5e9', '#efe3cd')}`,
+    `${s.body}
+    <rect x="0" y="0" width="${W}" height="430" fill="url(#wall)"/>
+    <rect x="0" y="418" width="${W}" height="16" fill="#e0d2b8"/>
+    <g>
+      ${arch(120, 120, 250, 400)} fill="#e8dcc2"/>
+      ${arch(136, 88, 222, 400)} fill="#cfe0e8"/>
+      ${arch(560, 120, 250, 400)} fill="#e8dcc2"/>
+      ${arch(576, 88, 222, 400)} fill="#cfe0e8"/>
+    </g>
+    <g>
+      ${arch(330, 140, 260, 400)} fill="#dccbaa"/>
+      ${arch(346, 108, 232, 400)} fill="#f7f0e2"/>
+      <g transform="translate(400 250)">
+        <path d="M-34 -30 L34 -30 L24 34 L-24 34 Z" fill="#c8a24a"/>
+        <path d="M-24 34 L24 34 L14 54 L-14 54 Z" fill="#e0bf6a"/>
+        <circle cx="0" cy="-42" r="9" fill="#c8a24a"/>
+        <rect x="-3" y="-96" width="6" height="56" fill="#b08d3c"/>
+      </g>
+    </g>
+    <rect x="0" y="434" width="${W}" height="166" fill="#eadfc9"/>
+    <g>
+      <rect x="86" y="470" width="628" height="120" rx="10" fill="url(#rug)"/>
+      <rect x="112" y="486" width="576" height="88" rx="6" fill="none" stroke="#e0b06a" stroke-width="4"/>
+      ${Array.from({ length: 9 }, (_, i) => `<path d="M${150 + i * 62} 530 l 16 -16 l 16 16 l -16 16 Z" fill="#e0b06a" opacity="0.85"/>`).join('')}
+    </g>
+    <g>
+      <rect x="40" y="380" width="200" height="54" rx="10" fill="#3f6b62"/>
+      <rect x="46" y="356" width="188" height="32" rx="10" fill="#4e7d73"/>
+      ${Array.from({ length: 3 }, (_, i) => `<rect x="${62 + i * 60}" y="352" width="44" height="26" rx="8" fill="#e0b06a"/>`).join('')}
+      <rect x="560" y="380" width="200" height="54" rx="10" fill="#3f6b62"/>
+      <rect x="566" y="356" width="188" height="32" rx="10" fill="#4e7d73"/>
+      ${Array.from({ length: 3 }, (_, i) => `<rect x="${582 + i * 60}" y="352" width="44" height="26" rx="8" fill="#e0b06a"/>`).join('')}
+    </g>
+    <g transform="translate(400 512)">
+      <ellipse cx="0" cy="0" rx="72" ry="22" fill="#c9a24a"/>
+      <ellipse cx="0" cy="-8" rx="72" ry="22" fill="#e0bf6a"/>
+      <path d="M-22 -14 q 22 -26 44 0 Z" fill="#f4e6c2"/>
+      <path d="M18 -18 q 20 -6 26 -22 l 6 6 q -8 18 -26 26 Z" fill="#c9a24a"/>
+    </g>`
+  );
+};
+
+scenes['v-staff'] = () =>
+  planBase(`
+    ${planFrame(70, 90, 660, 420)}
+    ${wall(430, 90, 430, 510)}
+    ${wall(430, 330, 730, 330)}
+    ${doorSwing(430, 200, 54, 90)}
+    ${doorSwing(560, 330, 46, 0)}
+    <rect x="440" y="100" width="280" height="220" fill="#ffeede"/>
+    ${bed(470, 140, 92, 116)}
+    ${furn(600, 140, 90, 44, 6)}
+    ${furn(600, 210, 90, 70, 6, '#f3dcc4')}
+    ${planLabel(580, 306, "STAFF ROOM", 16)}
+    <rect x="440" y="340" width="280" height="160" fill="#eef4f8"/>
+    ${furn(460, 360, 60, 60, 6)}
+    <circle cx="560" cy="392" r="22" fill="#dfe6ee" stroke="#9aa7b4" stroke-width="3"/>
+    ${furn(620, 360, 84, 60, 6)}
+    ${planLabel(580, 470, 'SHOWER + LAUNDRY', 14)}
+    ${kitchenRun(110, 120, 280, 52, true)}
+    ${planLabel(250, 250, 'KITCHEN')}
+    ${furn(110, 330, 130, 150, 8, '#e9eff5')}
+    ${planLabel(175, 500, 'PANTRY', 14)}
+    ${furn(270, 360, 120, 120, 8, '#e9eff5')}
+    ${planLabel(330, 500, 'BACK HALL', 14)}
+    <g stroke="#c0b6a6" stroke-width="3" stroke-dasharray="10 8"><line x1="430" y1="200" x2="430" y2="254"/></g>
+    <text x="400" y="552" font-family="Verdana, Geneva, sans-serif" font-size="18" letter-spacing="5" fill="#a99e8d" text-anchor="middle">SEPARATE ENTRANCE, OFF THE KITCHEN</text>
+  `);
+
 /* ------------------------------------------------------------------- run */
 
 function main() {
-  const { CARDS } = require('../lib/deck');
+  const { CARDS } = require('../lib/qualify');
   const outDir = path.join(__dirname, '..', 'public', 'img');
   fs.mkdirSync(outDir, { recursive: true });
 
-  const expected = CARDS.filter((c) => c.image.startsWith('/img/')).map((c) =>
-    path.basename(c.image, '.svg')
-  );
-  const missing = expected.filter((name) => !scenes[name]);
+  const missing = Object.keys(CARDS).filter((name) => !scenes[name]);
   if (missing.length) {
     console.error(`No scene defined for: ${missing.join(', ')}`);
     process.exitCode = 1;

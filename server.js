@@ -1,9 +1,12 @@
 'use strict';
 
 /**
- * SwipeHouse: a qualification funnel an agent can send as a link.
+ * Swipe to Shortlist: a Dubai buyer-qualification funnel an agent sends as a link.
  *
  * No framework, no database, no build step. `node server.js` and it runs.
+ * The client page (public/shortlist.html) also runs standalone with no server,
+ * so the same file can be hosted as a flat static page; when a server is behind
+ * it, every swipe is saved as it happens and lands on the agent's desk.
  */
 
 const http = require('http');
@@ -13,26 +16,19 @@ const crypto = require('crypto');
 
 const { LeadStore } = require('./lib/store');
 const scoring = require('./lib/scoring');
-const {
-  buildDeck,
-  CARDS_BY_ID,
-  PROPERTY_TYPES,
-  BUDGET_BANDS,
-  TIMELINES,
-} = require('./lib/deck');
+const Q = require('./lib/qualify');
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data', 'leads.json');
-const DECK_LIMIT = Number(process.env.DECK_LIMIT) || 20;
 const MAX_BODY_BYTES = 64 * 1024;
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
 const BRANDING = {
   agentName: process.env.AGENT_NAME || 'your agent',
-  agencyName: process.env.AGENCY_NAME || 'SwipeHouse',
-  currency: process.env.CURRENCY_SYMBOL || '$',
+  agencyName: process.env.AGENCY_NAME || 'Swipe to Shortlist',
+  currency: Q.CURRENCY,
 };
 
 const store = new LeadStore(DATA_FILE);
@@ -41,13 +37,12 @@ const store = new LeadStore(DATA_FILE);
 
 const AGENT_PASSCODE = process.env.AGENT_PASSCODE || crypto.randomBytes(4).toString('hex');
 const PASSCODE_WAS_GENERATED = !process.env.AGENT_PASSCODE;
-const sessions = new Map(); // token -> expiry timestamp
+const sessions = new Map();
 
 function timingSafeEqual(a, b) {
   const bufA = Buffer.from(String(a));
   const bufB = Buffer.from(String(b));
   if (bufA.length !== bufB.length) {
-    // Still burn a comparison so the length does not leak through timing.
     crypto.timingSafeEqual(bufA, bufA);
     return false;
   }
@@ -87,7 +82,7 @@ function isAgent(req) {
 
 /* -------------------------------------------------------- rate limiting */
 
-const hits = new Map(); // key -> { count, resetAt }
+const hits = new Map();
 
 function rateLimit(key, limit, windowMs) {
   const now = Date.now();
@@ -158,8 +153,37 @@ function str(value, maxLength) {
   return value.trim().slice(0, maxLength);
 }
 
-function oneOf(value, allowed) {
-  return allowed.includes(value) ? value : '';
+/** Keep only answers the deck actually offers, so the score cannot be gamed. */
+function cleanAnswers(input) {
+  const out = {};
+  if (!input || typeof input !== 'object') return out;
+  for (const group of Object.keys(Q.QUESTIONS)) {
+    const value = str(input[group], 30);
+    if (value && Q.option(group, value)) out[group] = value;
+  }
+  return out;
+}
+
+function cleanSwipes(input) {
+  const list = Array.isArray(input) ? input.slice(0, 120) : [];
+  const seen = new Set();
+  const out = [];
+  for (const swipe of list) {
+    const id = str(swipe && swipe.id, 40);
+    if (!Q.CARDS[id] || seen.has(id)) continue;
+    seen.add(id);
+    out.push({
+      id,
+      dir: swipe.dir === 'y' ? 'y' : 'n',
+      round: [1, 2, 3].includes(Number(swipe.round)) ? Number(swipe.round) : 1,
+    });
+  }
+  return out;
+}
+
+function cleanBranch(value) {
+  const branch = str(value, 20);
+  return Q.BRANCH_NAME[branch] ? branch : 'mixed';
 }
 
 /* ------------------------------------------------------- static serving */
@@ -178,12 +202,7 @@ const MIME = {
   '.woff2': 'font/woff2',
 };
 
-function serveStatic(req, res, urlPath) {
-  const rel = urlPath === '/' ? 'index.html' : decodeURIComponent(urlPath).replace(/^\/+/, '');
-  const target = path.resolve(PUBLIC_DIR, rel);
-  if (!target.startsWith(PUBLIC_DIR + path.sep) && target !== PUBLIC_DIR) {
-    return fail(res, 403, 'Forbidden');
-  }
+function serveFile(req, res, target) {
   fs.stat(target, (err, stat) => {
     if (err || !stat.isFile()) return fail(res, 404, 'Not found');
     const ext = path.extname(target).toLowerCase();
@@ -199,29 +218,26 @@ function serveStatic(req, res, urlPath) {
   });
 }
 
+function serveStatic(req, res, urlPath) {
+  const rel = urlPath === '/' ? 'shortlist.html' : decodeURIComponent(urlPath).replace(/^\/+/, '');
+  const target = path.resolve(PUBLIC_DIR, rel);
+  if (!target.startsWith(PUBLIC_DIR + path.sep) && target !== PUBLIC_DIR) {
+    return fail(res, 403, 'Forbidden');
+  }
+  serveFile(req, res, target);
+}
+
 /* ------------------------------------------------------------- routing */
 
 async function handle(req, res, url) {
   const { pathname } = url;
   const method = req.method;
 
-  // ---- public config -----------------------------------------------
   if (method === 'GET' && pathname === '/api/config') {
-    return send(res, 200, {
-      branding: BRANDING,
-      propertyTypes: PROPERTY_TYPES,
-      budgetBands: BUDGET_BANDS,
-      timelines: TIMELINES,
-    });
+    return send(res, 200, { branding: BRANDING, questions: Q.QUESTIONS, deckSize: scoring.DECK_SIZE });
   }
 
-  // ---- deck ---------------------------------------------------------
-  if (method === 'GET' && pathname === '/api/deck') {
-    const type = oneOf(url.searchParams.get('type'), PROPERTY_TYPES.map((t) => t.id)) || 'unsure';
-    return send(res, 200, { cards: buildDeck(type, DECK_LIMIT) });
-  }
-
-  // ---- create a lead --------------------------------------------------
+  // ---- a client starts ------------------------------------------------
   if (method === 'POST' && pathname === '/api/leads') {
     if (!rateLimit(`lead:${clientIp(req)}`, 30, 60 * 60 * 1000)) {
       return fail(res, 429, 'Too many submissions from this address. Try again later.');
@@ -235,71 +251,47 @@ async function handle(req, res, url) {
     if (!contact.name) return fail(res, 400, 'Tell us your name.');
     if (!scoring.validEmail(contact.email)) return fail(res, 400, 'That email does not look right.');
 
-    const brief = {
-      propertyType: oneOf(str(body.propertyType, 30), PROPERTY_TYPES.map((t) => t.id)) || 'unsure',
-      location: str(body.location, 120),
-      budget: oneOf(str(body.budget, 10), BUDGET_BANDS.map((b) => b.id)),
-      timeline: oneOf(str(body.timeline, 20), TIMELINES.map((t) => t.id)),
-    };
-
-    const deck = buildDeck(brief.propertyType, DECK_LIMIT);
-    const lead = store.create({ contact, brief, deckSize: deck.length });
-    return send(res, 201, { id: lead.id, token: lead.token, cards: deck });
+    const lead = store.create({
+      contact,
+      area: str(body.area, 120),
+      swipes: [],
+      answers: {},
+      branch: 'mixed',
+    });
+    return send(res, 201, { id: lead.id, token: lead.token });
   }
 
-  // ---- lead scoped routes ---------------------------------------------
-  const leadMatch = pathname.match(/^\/api\/leads\/(ld_[a-f0-9]{16})(?:\/(swipes|finish|profile))?$/);
+  // ---- that client's own session --------------------------------------
+  const leadMatch = pathname.match(/^\/api\/leads\/(ld_[a-f0-9]{16})\/(progress|finish)$/);
   if (leadMatch) {
+    if (method !== 'POST') return fail(res, 405, 'Method not allowed');
     const lead = store.get(leadMatch[1]);
-    const action = leadMatch[2];
     if (!lead) return fail(res, 404, 'We lost that session. Start again and nothing else breaks.');
+    const body = await readBody(req);
+    if (!timingSafeEqual(body.token || '', lead.token)) return fail(res, 403, 'Not your session.');
 
-    if (method === 'GET' && action === 'profile') {
-      if (!timingSafeEqual(url.searchParams.get('token') || '', lead.token)) {
-        return fail(res, 403, 'Not your session.');
-      }
-      return send(res, 200, scoring.clientProfile(lead, { currency: BRANDING.currency }));
+    const swipes = cleanSwipes(body.swipes);
+    const answers = cleanAnswers(body.answers);
+    const branch = cleanBranch(body.branch);
+    const note = str(body.note, 500);
+    const phone = str(body.phone, 40);
+
+    store.update(lead.id, (l) => {
+      if (swipes.length >= (l.swipes || []).length) l.swipes = swipes;
+      l.answers = { ...(l.answers || {}), ...answers };
+      l.branch = branch;
+      if (note) l.note = note;
+      if (phone) l.contact.phone = phone;
+      if (leadMatch[2] === 'finish') l.completedAt = l.completedAt || new Date().toISOString();
+    });
+
+    const updated = store.get(lead.id);
+    if (leadMatch[2] === 'finish') {
+      const summary = scoring.summarise(updated);
+      // The client sees its own read-out, never the agent's notes.
+      return send(res, 200, { hotness: summary.hotness, facets: summary.facets, progress: summary.progress });
     }
-
-    if (method === 'POST' && (action === 'swipes' || action === 'finish')) {
-      const body = await readBody(req);
-      if (!timingSafeEqual(body.token || '', lead.token)) return fail(res, 403, 'Not your session.');
-
-      if (action === 'swipes') {
-        const swipes = Array.isArray(body.swipes) ? body.swipes.slice(0, 200) : [];
-        const clean = [];
-        const seen = new Set();
-        for (const swipe of swipes) {
-          const cardId = str(swipe && swipe.cardId, 40);
-          if (!CARDS_BY_ID.has(cardId) || seen.has(cardId)) continue;
-          seen.add(cardId);
-          clean.push({
-            cardId,
-            direction: swipe.direction === 'right' ? 'right' : 'left',
-            ms: Math.max(0, Math.min(Number(swipe.ms) || 0, 10 * 60 * 1000)),
-            at: new Date().toISOString(),
-          });
-        }
-        store.update(lead.id, (l) => {
-          l.swipes = clean;
-          l.stage = clean.length >= l.deckSize && l.deckSize > 0 ? 'done' : 'swiping';
-        });
-        return send(res, 200, { ok: true, counted: clean.length });
-      }
-
-      // finish
-      const note = str(body.note, 500);
-      const phone = str(body.phone, 40);
-      store.update(lead.id, (l) => {
-        if (note) l.note = note;
-        if (phone) l.contact.phone = phone;
-        l.stage = 'done';
-        l.completedAt = l.completedAt || new Date().toISOString();
-      });
-      return send(res, 200, scoring.clientProfile(store.get(lead.id), { currency: BRANDING.currency }));
-    }
-
-    return fail(res, 405, 'Method not allowed');
+    return send(res, 200, { ok: true, counted: updated.swipes.length });
   }
 
   // ---- agent session ----------------------------------------------------
@@ -332,33 +324,26 @@ async function handle(req, res, url) {
     if (method === 'GET' && pathname === '/api/agent/leads') {
       const leads = store
         .all()
-        .map((lead) => scoring.summarise(lead, { currency: BRANDING.currency }))
-        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        .map((lead) => scoring.summarise(lead))
+        .sort((a, b) => b.hotness.value - a.hotness.value || new Date(b.updatedAt) - new Date(a.updatedAt));
       return send(res, 200, { leads, branding: BRANDING });
     }
 
     if (method === 'GET' && pathname === '/api/agent/leads.csv') {
-      const rows = [
-        ['name', 'email', 'phone', 'status', 'score', 'temperature', 'type', 'location', 'budget', 'timeline', 'likes', 'seen', 'of', 'created', 'wants'],
-      ];
+      const rows = [[
+        'name', 'email', 'phone', 'area', 'status', 'hotness', 'temperature',
+        'budget', 'funds', 'timing', 'viewing', 'purpose', 'leans',
+        'cards', 'flags', 'created',
+      ]];
       for (const lead of store.all()) {
-        const s = scoring.summarise(lead, { currency: BRANDING.currency });
+        const s = scoring.summarise(lead);
         rows.push([
-          s.contact.name,
-          s.contact.email,
-          s.contact.phone || '',
-          s.status,
-          s.score.value,
-          s.score.label,
-          s.brief.propertyType || '',
-          s.brief.location || '',
-          s.brief.budgetLabel,
-          s.brief.timelineLabel || '',
-          s.likes.length,
-          s.progress.done,
-          s.progress.of,
+          s.contact.name, s.contact.email, s.contact.phone || '', s.area || '',
+          s.status, s.hotness.value, s.hotness.label,
+          s.answers.budget, s.answers.payment, s.answers.timeline, s.answers.viewing, s.answers.purpose,
+          s.branchLabel, s.progress.done + '/' + s.progress.of,
+          s.hotness.flags.map((f) => f.text).join(' | '),
           s.createdAt,
-          s.wants.slice(0, 5).map((w) => w.tag).join(' | '),
         ]);
       }
       const csv = rows
@@ -366,7 +351,7 @@ async function handle(req, res, url) {
         .join('\n');
       return send(res, 200, csv, {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="swipehouse-leads.csv"',
+        'Content-Disposition': 'attachment; filename="dubai-leads.csv"',
       });
     }
 
@@ -383,18 +368,17 @@ async function handle(req, res, url) {
         if (typeof body.agentNotes === 'string') l.agentNotes = str(body.agentNotes, 2000);
         if (typeof body.archived === 'boolean') l.archived = body.archived;
       });
-      return send(res, 200, scoring.summarise(store.get(lead.id), { currency: BRANDING.currency }));
+      return send(res, 200, scoring.summarise(store.get(lead.id)));
     }
 
     return fail(res, 404, 'Unknown endpoint');
   }
 
   // ---- pages -------------------------------------------------------------
-  if (method === 'GET' && (pathname === '/agent' || pathname === '/agent/')) {
-    return serveStatic(req, res, '/agent.html');
-  }
-
   if (method === 'GET' || method === 'HEAD') {
+    if (pathname === '/agent' || pathname === '/agent/') return serveStatic(req, res, '/agent.html');
+    // One copy of the engine, served straight from lib so it cannot drift.
+    if (pathname === '/qualify.js') return serveFile(req, res, path.join(__dirname, 'lib', 'qualify.js'));
     return serveStatic(req, res, pathname);
   }
 
@@ -421,7 +405,7 @@ process.on('SIGTERM', shutdown);
 
 if (require.main === module) {
   server.listen(PORT, HOST, () => {
-    console.log(`\n  SwipeHouse is up`);
+    console.log('\n  Swipe to Shortlist is up');
     console.log(`  Client link:      http://localhost:${PORT}/`);
     console.log(`  Agent dashboard:  http://localhost:${PORT}/agent`);
     if (PASSCODE_WAS_GENERATED) {

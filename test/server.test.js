@@ -6,10 +6,9 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const DATA_FILE = path.join(os.tmpdir(), `swipehouse-test-${process.pid}.json`);
+const DATA_FILE = path.join(os.tmpdir(), `shortlist-test-${process.pid}.json`);
 process.env.DATA_FILE = DATA_FILE;
 process.env.AGENT_PASSCODE = 'open-sesame';
-process.env.CURRENCY_SYMBOL = '£';
 
 const { server, store } = require('../server');
 
@@ -25,113 +24,109 @@ test.after(() => {
   try { fs.unlinkSync(DATA_FILE); } catch (_) { /* never created */ }
 });
 
-async function createLead(overrides = {}) {
-  const res = await fetch(`${base}/api/leads`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: 'Alex Morgan',
-      email: 'alex@example.com',
-      propertyType: 'house',
-      location: 'Shoreditch',
-      budget: 'b4',
-      timeline: 'now',
-      ...overrides,
-    }),
+const post = (url, body) => fetch(url, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
+
+async function startLead(overrides = {}) {
+  const res = await post(`${base}/api/leads`, {
+    name: 'Alex Morgan',
+    email: 'alex@example.com',
+    phone: '+971501234567',
+    area: 'Dubai Marina',
+    ...overrides,
   });
   return { res, body: await res.json() };
 }
 
-test('the config endpoint feeds the form', async () => {
+test('the config endpoint hands over the readiness questions', async () => {
   const res = await fetch(`${base}/api/config`);
   const body = await res.json();
   assert.equal(res.status, 200);
-  assert.equal(body.branding.currency, '£');
-  assert.ok(body.propertyTypes.length);
-  assert.ok(body.budgetBands.length);
+  assert.equal(body.branding.currency, 'AED');
+  assert.ok(body.questions.payment.options.length >= 5);
+  assert.equal(body.deckSize, 18);
 });
 
-test('a bad email is rejected before a lead is stored', async () => {
+test('a bad email never becomes a lead', async () => {
   const before = store.all().length;
-  const { res, body } = await createLead({ email: 'not-an-email' });
+  const { res, body } = await startLead({ email: 'nope' });
   assert.equal(res.status, 400);
   assert.match(body.error, /email/i);
   assert.equal(store.all().length, before);
 });
 
-test('a missing name is rejected', async () => {
-  const { res } = await createLead({ name: '  ' });
-  assert.equal(res.status, 400);
-});
-
-test('creating a lead returns a deck and a private token', async () => {
-  const { res, body } = await createLead();
+test('starting gives back an id and a private token', async () => {
+  const { res, body } = await startLead();
   assert.equal(res.status, 201);
   assert.match(body.id, /^ld_[a-f0-9]{16}$/);
   assert.equal(body.token.length, 32);
-  assert.ok(body.cards.length > 5);
-  assert.ok(!('facet' in body.cards[0]), 'scoring internals stay on the server');
 });
 
-test('swipes are stored, deduped and filtered to real cards', async () => {
-  const { body: lead } = await createLead();
-  const res = await fetch(`${base}/api/leads/${lead.id}/swipes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      token: lead.token,
-      swipes: [
-        { cardId: 'style-modern', direction: 'right', ms: 800 },
-        { cardId: 'style-modern', direction: 'left', ms: 300 },
-        { cardId: 'not-a-real-card', direction: 'right' },
-        { cardId: 'pool-private', direction: 'sideways' },
-      ],
-    }),
+test('progress is saved as they swipe, and junk is dropped', async () => {
+  const { body: lead } = await startLead();
+  const res = await post(`${base}/api/leads/${lead.id}/progress`, {
+    token: lead.token,
+    branch: 'apartment',
+    swipes: [
+      { id: 'd1-marina', dir: 'y', round: 1 },
+      { id: 'd1-marina', dir: 'n', round: 1 },
+      { id: 'not-a-card', dir: 'y', round: 1 },
+      { id: 'a-seaview', dir: 'sideways', round: 9 },
+    ],
+    answers: { payment: 'cash_uae', budget: 'nonsense' },
   });
-  const body = await res.json();
   assert.equal(res.status, 200);
-  assert.equal(body.counted, 2);
 
   const stored = store.get(lead.id);
   assert.equal(stored.swipes.length, 2);
-  assert.equal(stored.swipes[0].direction, 'right');
-  assert.equal(stored.swipes[1].direction, 'left', 'an unknown direction falls back to a pass');
+  assert.equal(stored.swipes[0].dir, 'y');
+  assert.equal(stored.swipes[1].dir, 'n', 'an unknown direction falls back to a pass');
+  assert.equal(stored.swipes[1].round, 1, 'an impossible round falls back to one');
+  assert.equal(stored.answers.payment, 'cash_uae');
+  assert.ok(!('budget' in stored.answers), 'an answer that is not on the list is ignored');
+  assert.equal(stored.branch, 'apartment');
+});
+
+test('a stale beacon cannot shrink a session that moved on', async () => {
+  const { body: lead } = await startLead();
+  await post(`${base}/api/leads/${lead.id}/progress`, {
+    token: lead.token,
+    swipes: [
+      { id: 'd1-marina', dir: 'y', round: 1 },
+      { id: 'd1-downtown', dir: 'n', round: 1 },
+      { id: 'd1-beach', dir: 'n', round: 1 },
+    ],
+  });
+  await post(`${base}/api/leads/${lead.id}/progress`, {
+    token: lead.token,
+    swipes: [{ id: 'd1-marina', dir: 'y', round: 1 }],
+  });
+  assert.equal(store.get(lead.id).swipes.length, 3);
 });
 
 test('another visitor cannot write to someone else\'s session', async () => {
-  const { body: lead } = await createLead();
-  const res = await fetch(`${base}/api/leads/${lead.id}/swipes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token: 'wrong-token', swipes: [] }),
-  });
+  const { body: lead } = await startLead();
+  const res = await post(`${base}/api/leads/${lead.id}/progress`, { token: 'wrong', swipes: [] });
   assert.equal(res.status, 403);
 });
 
-test('finishing marks the lead complete and returns the profile', async () => {
-  const { body: lead } = await createLead();
-  await fetch(`${base}/api/leads/${lead.id}/swipes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      token: lead.token,
-      swipes: [{ cardId: 'pool-private', direction: 'right', ms: 500 }],
-    }),
+test('finishing returns the client their own read-out and nothing of the agent\'s', async () => {
+  const { body: lead } = await startLead();
+  const res = await post(`${base}/api/leads/${lead.id}/finish`, {
+    token: lead.token,
+    branch: 'prime',
+    swipes: [{ id: 'd1-beach', dir: 'y', round: 1 }],
+    answers: { purpose: 'live', budget: 'b6', payment: 'cash_uae', timeline: 'now', viewing: 'here_now' },
   });
-  const res = await fetch(`${base}/api/leads/${lead.id}/finish`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token: lead.token, phone: '+44 7700 900000', note: 'Near a school' }),
-  });
-  const profile = await res.json();
+  const body = await res.json();
   assert.equal(res.status, 200);
-  assert.ok(profile.score.value > 0);
-  assert.ok(profile.likes.some((l) => l.id === 'pool-private'));
-
-  const stored = store.get(lead.id);
-  assert.ok(stored.completedAt);
-  assert.equal(stored.contact.phone, '+44 7700 900000');
-  assert.equal(stored.note, 'Near a school');
+  assert.ok(body.hotness.value > 60);
+  assert.ok(!('agentNotes' in body));
+  assert.ok(!('briefText' in body));
+  assert.ok(store.get(lead.id).completedAt);
 });
 
 test('the dashboard is closed without the passcode', async () => {
@@ -139,70 +134,69 @@ test('the dashboard is closed without the passcode', async () => {
   assert.equal(res.status, 401);
 });
 
-test('a wrong passcode does not open a session', async () => {
-  const res = await fetch(`${base}/api/agent/session`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ passcode: 'guess' }),
-  });
+test('a wrong passcode opens nothing', async () => {
+  const res = await post(`${base}/api/agent/session`, { passcode: 'guess' });
   assert.equal(res.status, 401);
   assert.equal(res.headers.get('set-cookie'), null);
 });
 
-test('the passcode opens the dashboard and the leads come back scored', async () => {
-  const login = await fetch(`${base}/api/agent/session`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ passcode: 'open-sesame' }),
-  });
+test('the desk lists leads hottest first, with the scoring shown', async () => {
+  const login = await post(`${base}/api/agent/session`, { passcode: 'open-sesame' });
   assert.equal(login.status, 200);
-  const cookie = login.headers.get('set-cookie').split(';')[0];
   assert.match(login.headers.get('set-cookie'), /HttpOnly/);
+  const cookie = login.headers.get('set-cookie').split(';')[0];
 
   const res = await fetch(`${base}/api/agent/leads`, { headers: { cookie } });
   const body = await res.json();
   assert.equal(res.status, 200);
-  assert.ok(body.leads.length >= 3);
-  assert.ok(body.leads[0].summaryText.length > 10);
-  assert.ok(!('token' in body.leads[0]), 'client tokens stay private');
+  assert.ok(body.leads.length >= 4);
+  for (let i = 1; i < body.leads.length; i += 1) {
+    assert.ok(body.leads[i - 1].hotness.value >= body.leads[i].hotness.value, 'sorted by hotness');
+  }
+  const top = body.leads[0];
+  assert.ok(top.hotness.parts.length === 6);
+  assert.ok(top.briefText.length > 10);
+  assert.ok(!('token' in top), 'client tokens stay private');
 
   const csv = await fetch(`${base}/api/agent/leads.csv`, { headers: { cookie } });
   assert.equal(csv.status, 200);
   assert.match(csv.headers.get('content-type'), /text\/csv/);
   const text = await csv.text();
   assert.match(text, /alex@example.com/);
+  assert.match(text, /hotness/);
 });
 
-test('static files are served and the public directory is not escapable', async () => {
+test('the client page and the shared engine are both served', async () => {
   const page = await fetch(`${base}/`);
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-type'), /text\/html/);
+  const html = await page.text();
+  assert.match(html, /Swipe to Shortlist/);
 
-  const image = await fetch(`${base}/img/pool-private.svg`);
+  const engine = await fetch(`${base}/qualify.js`);
+  assert.equal(engine.status, 200);
+  assert.match(engine.headers.get('content-type'), /javascript/);
+  assert.match(await engine.text(), /Qualify/);
+
+  const image = await fetch(`${base}/img/d1-beach.svg`);
   assert.equal(image.status, 200);
   assert.match(image.headers.get('content-type'), /svg/);
-
-  const escape = await fetch(`${base}/../server.js`, { redirect: 'manual' });
-  assert.ok(escape.status === 403 || escape.status === 404, `expected a refusal, got ${escape.status}`);
-
-  const dotdot = await fetch(`${base}/%2e%2e/server.js`, { redirect: 'manual' });
-  assert.ok(dotdot.status === 403 || dotdot.status === 404);
 });
 
-test('oversized bodies are refused', async () => {
-  const res = await fetch(`${base}/api/leads`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'x'.repeat(200000), email: 'a@b.co' }),
-  }).catch(() => ({ status: 413 }));
-  assert.ok(res.status === 413 || res.status === 400);
+test('the public directory is not escapable', async () => {
+  for (const url of [`${base}/../server.js`, `${base}/%2e%2e/server.js`, `${base}/../lib/store.js`]) {
+    const res = await fetch(url, { redirect: 'manual' });
+    assert.ok(res.status === 403 || res.status === 404, `${url} should be refused, got ${res.status}`);
+  }
 });
 
 test('an unknown lead id does not leak a 500', async () => {
-  const res = await fetch(`${base}/api/leads/ld_ffffffffffffffff/finish`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token: 'x' }),
-  });
+  const res = await post(`${base}/api/leads/ld_ffffffffffffffff/finish`, { token: 'x' });
   assert.equal(res.status, 404);
+});
+
+test('oversized bodies are refused', async () => {
+  const res = await post(`${base}/api/leads`, { name: 'x'.repeat(200000), email: 'a@b.co' })
+    .catch(() => ({ status: 413 }));
+  assert.ok(res.status === 413 || res.status === 400);
 });
