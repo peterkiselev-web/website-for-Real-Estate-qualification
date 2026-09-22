@@ -143,3 +143,43 @@
   .lead-score { justify-items: start; text-align: left; }
   .meter { grid-template-columns: 66px 1fr 46px; }
 }
+
+/* -------------------------------------------------- matched areas */
+.lead-areas { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; margin-top: 7px; }
+.areas-key {
+  font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 700;
+}
+.area-pill {
+  border: 1.5px solid var(--ink); border-radius: 999px; padding: 3px 10px;
+  font-size: 13px; display: inline-flex; gap: 6px; align-items: baseline;
+}
+.area-pill b { font-weight: 600; }
+.area-pill i { font-style: normal; color: var(--ink-soft); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+.areas-table { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.area-row {
+  display: grid; grid-template-columns: 26px 1fr auto; gap: 10px;
+  padding: 11px 12px; background: var(--card); align-items: start;
+}
+.area-n {
+  font-family: var(--display); font-weight: 900; font-size: 18px;
+  color: var(--rule); line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.area-name { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.area-name b { font-size: 15.5px; font-weight: 700; }
+.area-pct { font-size: 12px; color: var(--yes); font-variant-numeric: tabular-nums; }
+.area-stretch {
+  font-size: 11px; color: var(--no); border: 1px solid var(--no);
+  border-radius: 999px; padding: 1px 7px;
+}
+.area-why { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+.area-catch { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; font-style: italic; }
+.area-price { text-align: right; font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; }
+.area-price b { display: block; color: var(--ink); font-size: 14px; font-variant-numeric: tabular-nums; }
+.area-also { font-size: 13px; color: var(--ink-soft); margin: 9px 0 0; }
+
+@media (max-width: 560px) {
+  .area-row { grid-template-columns: 22px 1fr; }
+  .area-price { text-align: left; grid-column: 2; }
+}

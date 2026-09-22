@@ -9,9 +9,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const src = path.join(__dirname, '..', 'lib', 'qualify.js');
-const dest = path.join(__dirname, '..', 'public', 'qualify.js');
-
-const banner = '/* GENERATED FILE. Edit lib/qualify.js and run `npm run sync`. */\n';
-fs.writeFileSync(dest, banner + fs.readFileSync(src, 'utf8'), 'utf8');
-console.log('Wrote public/qualify.js from lib/qualify.js');
+for (const name of ['qualify.js', 'communities.js']) {
+  const src = path.join(__dirname, '..', 'lib', name);
+  const dest = path.join(__dirname, '..', 'public', name);
+  const banner = `/* GENERATED FILE. Edit lib/${name} and run \`npm run sync\`. */\n`;
+  fs.writeFileSync(dest, banner + fs.readFileSync(src, 'utf8'), 'utf8');
+  console.log(`Wrote public/${name} from lib/${name}`);
+}

@@ -17,6 +17,7 @@ const crypto = require('crypto');
 const { LeadStore } = require('./lib/store');
 const scoring = require('./lib/scoring');
 const Q = require('./lib/qualify');
+const C = require('./lib/communities');
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -186,6 +187,17 @@ function cleanBranch(value) {
   return Q.BRANCH_NAME[branch] ? branch : 'mixed';
 }
 
+/** Only tie-breaks the bank actually offers, and only options it defines. */
+function cleanTiebreaks(input) {
+  const out = {};
+  if (!input || typeof input !== 'object') return out;
+  for (const tb of C.TIEBREAKERS) {
+    const choice = str(input[tb.id], 30);
+    if (choice && tb.options.some((o) => o.id === choice)) out[tb.id] = choice;
+  }
+  return out;
+}
+
 /* ------------------------------------------------------- static serving */
 
 const MIME = {
@@ -272,6 +284,7 @@ async function handle(req, res, url) {
 
     const swipes = cleanSwipes(body.swipes);
     const answers = cleanAnswers(body.answers);
+    const tiebreaks = cleanTiebreaks(body.tiebreaks);
     const branch = cleanBranch(body.branch);
     const note = str(body.note, 500);
     const phone = str(body.phone, 40);
@@ -279,6 +292,7 @@ async function handle(req, res, url) {
     store.update(lead.id, (l) => {
       if (swipes.length >= (l.swipes || []).length) l.swipes = swipes;
       l.answers = { ...(l.answers || {}), ...answers };
+      l.tiebreaks = { ...(l.tiebreaks || {}), ...tiebreaks };
       l.branch = branch;
       if (note) l.note = note;
       if (phone) l.contact.phone = phone;
@@ -289,7 +303,12 @@ async function handle(req, res, url) {
     if (leadMatch[2] === 'finish') {
       const summary = scoring.summarise(updated);
       // The client sees its own read-out, never the agent's notes.
-      return send(res, 200, { hotness: summary.hotness, facets: summary.facets, progress: summary.progress });
+      return send(res, 200, {
+        hotness: summary.hotness,
+        facets: summary.facets,
+        progress: summary.progress,
+        areas: summary.areas,
+      });
     }
     return send(res, 200, { ok: true, counted: updated.swipes.length });
   }
@@ -331,16 +350,18 @@ async function handle(req, res, url) {
 
     if (method === 'GET' && pathname === '/api/agent/leads.csv') {
       const rows = [[
-        'name', 'email', 'phone', 'area', 'status', 'hotness', 'temperature',
-        'budget', 'funds', 'timing', 'viewing', 'purpose', 'leans',
+        'name', 'email', 'phone', 'areas', 'status', 'hotness', 'temperature',
+        'budget', 'funds', 'timing', 'viewing', 'purpose', 'commute', 'leans',
         'cards', 'flags', 'created',
       ]];
       for (const lead of store.all()) {
         const s = scoring.summarise(lead);
         rows.push([
-          s.contact.name, s.contact.email, s.contact.phone || '', s.area || '',
+          s.contact.name, s.contact.email, s.contact.phone || '',
+          s.areas.top.map((a) => a.name).join(' | '),
           s.status, s.hotness.value, s.hotness.label,
-          s.answers.budget, s.answers.payment, s.answers.timeline, s.answers.viewing, s.answers.purpose,
+          s.answers.budget, s.answers.payment, s.answers.timeline, s.answers.viewing,
+          s.answers.purpose, s.answers.commute,
           s.branchLabel, s.progress.done + '/' + s.progress.of,
           s.hotness.flags.map((f) => f.text).join(' | '),
           s.createdAt,
@@ -379,6 +400,7 @@ async function handle(req, res, url) {
     if (pathname === '/agent' || pathname === '/agent/') return serveStatic(req, res, '/agent.html');
     // One copy of the engine, served straight from lib so it cannot drift.
     if (pathname === '/qualify.js') return serveFile(req, res, path.join(__dirname, 'lib', 'qualify.js'));
+    if (pathname === '/communities.js') return serveFile(req, res, path.join(__dirname, 'lib', 'communities.js'));
     return serveStatic(req, res, pathname);
   }
 

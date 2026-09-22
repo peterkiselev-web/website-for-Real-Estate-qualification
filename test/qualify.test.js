@@ -204,7 +204,7 @@ test('a drop-off during the money questions says which question', () => {
     swipes: FULL_DECK,
     answers: { purpose: 'live', budget: 'b3' },
   }));
-  assert.match(summary.dropOff.stage, /readiness question 3 of 5/);
+  assert.match(summary.dropOff.stage, /readiness question 3 of 6/);
 });
 
 test('the dashboard view answers in words, not ids', () => {

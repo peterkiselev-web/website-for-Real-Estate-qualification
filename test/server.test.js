@@ -171,12 +171,14 @@ test('the client page and the shared engine are both served', async () => {
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-type'), /text\/html/);
   const html = await page.text();
-  assert.match(html, /Swipe to Shortlist/);
+  assert.match(html, /Which area suits you/);
 
-  const engine = await fetch(`${base}/qualify.js`);
-  assert.equal(engine.status, 200);
-  assert.match(engine.headers.get('content-type'), /javascript/);
-  assert.match(await engine.text(), /Qualify/);
+  for (const [path, marker] of [['/qualify.js', /Qualify/], ['/communities.js', /Communities/]]) {
+    const engine = await fetch(`${base}${path}`);
+    assert.equal(engine.status, 200, `${path} should be served`);
+    assert.match(engine.headers.get('content-type'), /javascript/);
+    assert.match(await engine.text(), marker);
+  }
 
   const image = await fetch(`${base}/img/d1-beach.svg`);
   assert.equal(image.status, 200);

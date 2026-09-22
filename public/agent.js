@@ -89,7 +89,8 @@
       if (state.filter === 'viewing' && !/here_now|here_soon|flying/.test(viewingId(lead))) return false;
       if (state.filter === 'abandoned' && lead.status !== 'abandoned') return false;
       if (state.query) {
-        const hay = [lead.contact.name, lead.contact.email, lead.contact.phone, lead.area, lead.branchLabel]
+        const hay = [lead.contact.name, lead.contact.email, lead.contact.phone, lead.branchLabel]
+          .concat(lead.areas.top.map((a) => a.name))
           .join(' ').toLowerCase();
         if (!hay.includes(state.query)) return false;
       }
@@ -165,13 +166,28 @@
     name.appendChild(el('span', 'badge badge-status', STATUS_LABEL[lead.status] || lead.status));
     left.appendChild(name);
 
+    // The headline the agent actually wants: which areas to send them.
+    const areas = el('div', 'lead-areas');
+    if (lead.areas.top.length) {
+      areas.appendChild(el('span', 'areas-key', 'Areas'));
+      lead.areas.top.forEach((a) => {
+        const pill = el('span', 'area-pill');
+        pill.appendChild(el('b', '', a.name));
+        pill.appendChild(el('i', '', `${a.match}%`));
+        areas.appendChild(pill);
+      });
+    } else {
+      areas.appendChild(el('span', 'areas-key', 'Areas: not enough answers yet'));
+    }
+    left.appendChild(areas);
+
     const line = el('div', 'lead-line');
     line.textContent = [
       lead.contact.email,
       lead.contact.phone,
-      lead.area,
       lead.answers.budget,
       lead.answers.payment,
+      lead.answers.commute && `works around ${lead.answers.commute}`,
       `${lead.progress.done}/${lead.progress.of} cards`,
       timeAgo(lead.updatedAt),
     ].filter(Boolean).join(' · ');
@@ -219,6 +235,40 @@
     advice.appendChild(document.createTextNode(lead.hotness.advice));
     body.appendChild(advice);
 
+    /* the shortlist, which is what you send them */
+    if (lead.areas.top.length) {
+      const shortlist = el('div', 'detail');
+      shortlist.appendChild(el('h4', '', `Send them ${lead.areas.kind === 'any' ? 'property' : lead.areas.kind + 's'} in`));
+      const table = el('div', 'areas-table');
+      lead.areas.top.forEach((a, i) => {
+        const row = el('div', 'area-row');
+        row.appendChild(el('span', 'area-n', String(i + 1)));
+        const mid = el('div');
+        const head = el('div', 'area-name');
+        head.appendChild(el('b', '', a.name));
+        head.appendChild(el('span', 'area-pct', `${a.match}% match`));
+        if (a.budget === 'stretch') head.appendChild(el('span', 'area-stretch', 'stretch'));
+        mid.appendChild(head);
+        mid.appendChild(el('div', 'area-why', a.reasons.length ? a.reasons.join(' · ') : a.blurb));
+        mid.appendChild(el('div', 'area-catch', a.catch));
+        row.appendChild(mid);
+        const price = el('span', 'area-price');
+        price.appendChild(el('b', '', a.fromLabel));
+        price.appendChild(el('span', '', ` ${a.kind}s`));
+        if (a.minutes) price.appendChild(el('span', '', ` · ${a.minutes} min`));
+        row.appendChild(price);
+        table.appendChild(row);
+      });
+      shortlist.appendChild(table);
+      if (lead.areas.also.length) {
+        shortlist.appendChild(el('p', 'area-also', `Also close: ${lead.areas.also.map((a) => a.name).join(', ')}`));
+      }
+      if (lead.areas.outOfReach.length) {
+        shortlist.appendChild(el('p', 'area-also', `Wants but cannot afford: ${lead.areas.outOfReach.map((a) => `${a.name} (from ${a.fromLabel})`).join(', ')}`));
+      }
+      body.appendChild(shortlist);
+    }
+
     /* how the score was reached */
     const score = el('div', 'detail');
     score.appendChild(el('h4', '', 'How that number was reached'));
@@ -252,8 +302,8 @@
     answers.appendChild(el('h4', '', 'What they told you'));
     const aList = el('ul');
     [
-      ['Area', lead.area],
       ['Budget', lead.answers.budget],
+      ['Week around', lead.answers.commute],
       ['For', lead.answers.purpose],
       ['Funds', lead.answers.payment],
       ['Timing', lead.answers.timeline],

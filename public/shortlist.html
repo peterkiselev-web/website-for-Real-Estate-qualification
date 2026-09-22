@@ -1,4 +1,4 @@
-<title>Swipe to Shortlist</title>
+<title>Which Dubai Area Suits You</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Archivo:wght@400;500;600;700&display=swap">
 <style>
@@ -67,6 +67,10 @@ h2.display {
 }
 p.lede { color: var(--ink-soft); margin: 0 0 18px; max-width: 34em; }
 p.lede b { color: var(--ink); font-weight: 600; }
+.eyebrow {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--yes); font-weight: 700; margin: 0 0 6px;
+}
 
 .fan { position: relative; height: 196px; margin-top: auto; display: grid; place-items: center; }
 .fan img {
@@ -119,7 +123,6 @@ p.lede b { color: var(--ink); font-weight: 600; }
 }
 .field input:focus { outline: none; border-color: var(--yes); }
 .err { color: var(--no); font-size: 13.5px; min-height: 19px; margin: 0 0 6px; }
-.hint-small { font-size: 12.5px; color: var(--ink-soft); margin: -6px 0 14px; }
 
 .roundbar { display: grid; gap: 7px; margin: 14px 0 10px; }
 .roundbar .track { display: flex; gap: 4px; }
@@ -192,14 +195,14 @@ p.lede b { color: var(--ink); font-weight: 600; }
 .gate .learned li { margin-bottom: 4px; }
 .gate .narrowing { font-size: 13px; color: var(--ink-soft); margin-top: 14px; }
 
-/* ------------------------------------------------ readiness questions */
 .q-head { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 6px; }
 .q-head .step { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; }
 .answers { display: grid; gap: 9px; margin-top: 14px; }
 .answer {
   width: 100%; text-align: left; cursor: pointer; background: var(--card);
   border: 1.5px solid var(--rule); border-radius: 3px; padding: 15px 16px;
-  font-size: 16px; font-weight: 500; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  font-size: 16px; font-weight: 500; display: flex; justify-content: space-between;
+  align-items: center; gap: 10px;
   transition: border-color 0.15s ease, transform 0.12s ease;
 }
 .answer:hover { border-color: var(--ink-soft); }
@@ -207,14 +210,63 @@ p.lede b { color: var(--ink); font-weight: 600; }
 .answer[aria-checked="true"] { border-color: var(--yes); box-shadow: inset 0 0 0 1px var(--yes); }
 .answer .tick { color: var(--yes); font-weight: 700; opacity: 0; }
 .answer[aria-checked="true"] .tick { opacity: 1; }
+.shortlisting { font-size: 13px; color: var(--ink-soft); margin: 14px 0 0; }
+.shortlisting b { color: var(--ink); font-weight: 600; }
 
-/* ------------------------------------------------------------- result */
-.sheet { background: var(--card); border: 1.5px solid var(--rule); border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
+/* --------------------------------------------------------- the areas */
+.screen-result { gap: 0; }
+.areas { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 12px; }
+.area {
+  background: var(--card); border: 1.5px solid var(--rule); border-radius: 4px;
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.area-top {
+  display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: start;
+  padding: 15px 16px 10px;
+}
+.area-rank {
+  font-family: var(--display); font-weight: 900; font-size: 30px; line-height: 0.9;
+  color: var(--rule); font-variant-numeric: tabular-nums;
+}
+.area h3 { font-family: var(--display); font-weight: 700; font-size: 21px; line-height: 1.08; letter-spacing: -0.02em; margin: 0; }
+.area .aka { font-size: 12.5px; color: var(--ink-soft); margin: 2px 0 0; }
+.area-match { text-align: right; }
+.area-match b { display: block; font-family: var(--display); font-weight: 900; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.area-match span { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.area .blurb { margin: 0; padding: 0 16px 12px; font-size: 14.5px; }
+.why { list-style: none; margin: 0; padding: 0 16px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.why li {
+  font-size: 12.5px; border: 1px solid var(--yes); color: var(--yes);
+  border-radius: 999px; padding: 3px 10px;
+}
+.area-foot {
+  display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: space-between;
+  padding: 10px 16px; border-top: 1px solid var(--rule);
+  font-size: 13px; background: var(--paper-2);
+}
+.area-foot .price b { font-weight: 600; }
+.area-foot .stretch { color: var(--no); }
+.area .catch { margin: 0; padding: 10px 16px; font-size: 13px; color: var(--ink-soft); border-top: 1px dashed var(--rule); }
+.area .catch b { color: var(--ink); font-weight: 600; }
+
+.also { border-top: 1px solid var(--rule); padding-top: 14px; margin-bottom: 16px; }
+.also h4, .reach h4 {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 700; margin: 0 0 8px;
+}
+.also ul, .reach ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 14px; }
+.also li b, .reach li b { font-weight: 600; }
+.also li span, .reach li span { color: var(--ink-soft); }
+.reach { border-top: 1px solid var(--rule); padding-top: 14px; margin-bottom: 16px; }
+
+details.brief { border-top: 1px solid var(--rule); padding-top: 12px; margin-bottom: 16px; }
+details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-soft); }
+.sheet { background: var(--card); border: 1.5px solid var(--rule); border-radius: 4px; overflow: hidden; margin-top: 12px; }
 .sheet-top {
-  padding: 16px 16px 13px; border-bottom: 2px solid var(--ink);
+  padding: 15px 16px 12px; border-bottom: 2px solid var(--ink);
   display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
 }
-.sheet-top .who { font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.05; letter-spacing: -0.02em; }
+.sheet-top .who { font-family: var(--display); font-weight: 700; font-size: 20px; line-height: 1.05; letter-spacing: -0.02em; }
 .sheet-top .sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; word-break: break-word; }
 .gradestamp {
   flex: none; border: 2.5px solid var(--stamp); color: var(--stamp);
@@ -222,11 +274,10 @@ p.lede b { color: var(--ink); font-weight: 600; }
 }
 .gradestamp b { display: block; font-family: var(--display); font-weight: 900; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
 .gradestamp span { display: block; font-size: 10px; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
-
 .rows { display: grid; }
 .rows div {
-  display: grid; grid-template-columns: 108px 1fr; gap: 10px;
-  padding: 10px 16px; border-bottom: 1px solid var(--rule); font-size: 14.5px;
+  display: grid; grid-template-columns: 104px 1fr; gap: 10px;
+  padding: 9px 16px; border-bottom: 1px solid var(--rule); font-size: 14px;
 }
 .rows div:last-child { border-bottom: 0; }
 .rows .k {
@@ -235,10 +286,9 @@ p.lede b { color: var(--ink); font-weight: 600; }
 }
 .rows .v { font-weight: 500; }
 .rows .v em { font-style: normal; color: var(--ink-soft); }
-
-.liked { display: flex; gap: 7px; overflow-x: auto; padding: 14px 16px; }
-.liked figure { margin: 0; flex: 0 0 92px; }
-.liked img { width: 92px; height: 68px; object-fit: cover; border-radius: 3px; border: 1px solid var(--rule); }
+.liked { display: flex; gap: 7px; overflow-x: auto; padding: 12px 16px; }
+.liked figure { margin: 0; flex: 0 0 88px; }
+.liked img { width: 88px; height: 66px; object-fit: cover; border-radius: 3px; border: 1px solid var(--rule); }
 .liked figcaption { font-size: 11px; color: var(--ink-soft); margin-top: 4px; line-height: 1.2; }
 
 .agent-setup { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 12px; }
@@ -255,8 +305,8 @@ p.lede b { color: var(--ink); font-weight: 600; }
 
 <div class="wrap">
   <header class="masthead">
-    <div class="mark">Swipe to Shortlist</div>
-    <div class="ref" id="ref">Dubai buyer brief</div>
+    <div class="mark">Which area suits you</div>
+    <div class="ref" id="ref">Dubai</div>
   </header>
 
   <!-- ------------------------------------------------------ welcome -->
@@ -266,18 +316,19 @@ p.lede b { color: var(--ink); font-weight: 600; }
       <img src="img/d1-beach.svg" alt="">
       <img src="img/d1-marina.svg" alt="">
     </div>
-    <h1 class="display">Three rounds.<br>No forms.</h1>
+    <h1 class="display">Find your<br>Dubai area.</h1>
     <p class="lede">
-      Swipe on Dubai property and the questions narrow as you go. By the end
-      <b id="agent-name-1">your agent</b> knows what you want and whether it can be found
-      in your budget, and you never filled in a single drop-down.
+      Swipe on property, answer a few quick questions, and leave knowing the three
+      communities that actually fit you. No forms, no drop-downs, and
+      <b id="agent-name-1">your agent</b> gets the same answer you do.
     </p>
     <ol class="steps-preview">
       <li><span class="n">1</span><span class="t"><b>Wide net.</b> <span>Marina, Downtown, villas, off-plan. We find your corner.</span></span></li>
       <li><span class="n">2</span><span class="t"><b>Narrow it.</b> <span>Only what suits the corner you picked.</span></span></li>
-      <li><span class="n">3</span><span class="t"><b>The fussy bit.</b> <span>Pools, majlis, staff room, the deal-breakers.</span></span></li>
+      <li><span class="n">3</span><span class="t"><b>Split the tie.</b> <span>Beach or golf, metro or space, new or grown in.</span></span></li>
+      <li><span class="n">4</span><span class="t"><b>Your areas.</b> <span>Three communities, why each one, and the catch.</span></span></li>
     </ol>
-    <button class="btn push" id="go">Start round one<span class="sub">About ninety seconds</span></button>
+    <button class="btn push" id="go">Start round one<span class="sub">About two minutes</span></button>
     <details class="agent-setup" id="setup">
       <summary>Are you the agent? Build your link</summary>
       <label class="field"><span>Your name</span><input type="text" id="a-name" placeholder="Peter Kiselev"></label>
@@ -290,11 +341,10 @@ p.lede b { color: var(--ink); font-weight: 600; }
   <!-- -------------------------------------------------------- brief -->
   <section class="screen" id="s-brief">
     <h2 class="display">Who is this for?</h2>
-    <p class="lede">Four things, then we start swiping.</p>
+    <p class="lede">Three things, then we start swiping. The area is what we work out together.</p>
     <label class="field"><span>Name</span><input type="text" id="f-name" autocomplete="name" maxlength="80" placeholder="Alex Morgan"></label>
     <label class="field"><span>Email</span><input type="email" id="f-email" autocomplete="email" inputmode="email" maxlength="120" placeholder="alex@email.com"></label>
     <label class="field"><span>Phone or WhatsApp</span><input type="tel" id="f-phone" autocomplete="tel" maxlength="40" placeholder="+971 50 123 4567"></label>
-    <label class="field"><span>Where in Dubai</span><input type="text" id="f-area" maxlength="120" placeholder="Marina, JVC, or anywhere with a garden"></label>
     <p class="err" id="e-brief"></p>
     <button class="btn push" id="to-round">Deal the first six</button>
   </section>
@@ -329,45 +379,58 @@ p.lede b { color: var(--ink); font-weight: 600; }
     <p class="keys">Drag the card, tap, or use the arrow keys. Z undoes.</p>
   </section>
 
-  <!-- ----------------------------------------------------- readiness -->
+  <!-- ------------------------------------------------ tap questions -->
   <section class="screen" id="s-quick">
-    <div class="q-head"><span class="step" id="q-step">Question 1 of 5</span><span class="step" id="q-left"></span></div>
+    <div class="q-head"><span class="step" id="q-step"></span><span class="step" id="q-left"></span></div>
     <h2 class="display" id="q-title"></h2>
     <p class="lede" id="q-sub"></p>
     <div class="answers" id="q-answers"></div>
-    <div class="row push"><button class="btn ghost small" id="q-back" style="flex:0 0 34%">Back</button></div>
+    <p class="shortlisting" id="q-shortlisting"></p>
+    <div class="row push"><button class="btn ghost small" id="q-back" style="flex:0 0 36%">Back</button></div>
   </section>
 
   <!-- -------------------------------------------------------- result -->
-  <section class="screen" id="s-result">
-    <div class="sheet">
-      <div class="sheet-top">
-        <div>
-          <div class="who" id="r-who">Alex Morgan</div>
-          <div class="sub" id="r-contact"></div>
+  <section class="screen screen-result" id="s-result">
+    <p class="eyebrow" style="margin-top:16px">Your areas</p>
+    <h2 class="display" id="r-title">Three that fit</h2>
+    <p class="lede" id="r-lede"></p>
+
+    <ol class="areas" id="r-areas"></ol>
+    <div class="also" id="r-also" hidden><h4>Also worth a look</h4><ul id="r-also-list"></ul></div>
+    <div class="reach" id="r-reach" hidden><h4>Out of reach on this budget</h4><ul id="r-reach-list"></ul></div>
+
+    <details class="brief">
+      <summary>The brief behind this</summary>
+      <div class="sheet">
+        <div class="sheet-top">
+          <div>
+            <div class="who" id="r-who">Alex Morgan</div>
+            <div class="sub" id="r-contact"></div>
+          </div>
+          <div class="gradestamp"><b id="r-grade">Brief</b><span id="r-score">0/100</span></div>
         </div>
-        <div class="gradestamp"><b id="r-grade">Brief</b><span id="r-score">0/100</span></div>
+        <div class="rows" id="r-rows"></div>
+        <div class="liked" id="r-liked"></div>
       </div>
-      <div class="rows" id="r-rows"></div>
-      <div class="liked" id="r-liked"></div>
-    </div>
-    <button class="btn" id="r-send">Send this to <span id="agent-name-2">my agent</span></button>
+    </details>
+
+    <button class="btn" id="r-send">Send my areas to <span id="agent-name-2">my agent</span></button>
     <div class="row" style="margin-top:9px">
-      <button class="btn ghost small" id="r-copy" style="flex:1">Copy the brief</button>
+      <button class="btn ghost small" id="r-copy" style="flex:1">Copy the shortlist</button>
       <button class="btn ghost small" id="r-again" style="flex:1">Start again</button>
     </div>
     <p class="note" id="r-note"></p>
   </section>
 </div>
 
-<!-- QUALIFY:START -->
 <script src="qualify.js"></script>
-<!-- QUALIFY:END -->
+<script src="communities.js"></script>
 
 <script>
 (() => {
   'use strict';
   const Q = window.Qualify;
+  const C = window.Communities;
 
   const $ = (s) => document.querySelector(s);
   const el = (tag, cls, text) => {
@@ -380,22 +443,34 @@ p.lede b { color: var(--ink); font-weight: 600; }
   const S = {
     agent: { name: 'your agent', email: '' },
     contact: { name: '', email: '', phone: '' },
-    area: '',
     round: 0, queue: [], at: 0,
     swipes: [], branch: 'mixed',
-    answers: {}, qIndex: 0,
+    answers: {}, tiebreaks: {},
+    taps: [], tapIndex: 0,
     locked: false,
-    lead: null,            // { id, token } when a server is behind this page
+    lead: null,
     syncTimer: null,
   };
 
-  const QORDER = [
-    { key: 'purpose', title: 'What is it for?', sub: 'Changes what gets sent to you.' },
-    { key: 'budget', title: 'Budget, roughly', sub: 'Nobody holds you to it. It stops you being sent the wrong thing.' },
-    { key: 'payment', title: 'How would it be paid for?', sub: 'The honest answer saves everyone a fortnight.' },
-    { key: 'timeline', title: 'When are you moving?', sub: '' },
-    { key: 'viewing', title: 'Can you view in person?', sub: '' },
+  const BASE_TAPS = [
+    { kind: 'q', key: 'purpose', title: 'What is it for?', sub: 'Changes which areas make sense, not just which homes.' },
+    { kind: 'q', key: 'budget', title: 'Budget, roughly', sub: 'Nobody holds you to it. It decides which communities we can put on the list.' },
+    { kind: 'q', key: 'commute', title: 'Where does your week happen?', sub: 'In Dubai this decides more than anything else.' },
+    { kind: 'q', key: 'payment', title: 'How would it be paid for?', sub: 'The honest answer saves everyone a fortnight.' },
+    { kind: 'q', key: 'timeline', title: 'When are you moving?', sub: '' },
+    { kind: 'q', key: 'viewing', title: 'Can you view in person?', sub: '' },
   ];
+
+  function lead() {
+    return {
+      contact: S.contact,
+      area: '',
+      swipes: S.swipes,
+      branch: S.branch,
+      answers: S.answers,
+      tiebreaks: S.tiebreaks,
+    };
+  }
 
   /* ------------------------------------------------------ agent link */
   function readLink() {
@@ -442,17 +517,18 @@ p.lede b { color: var(--ink); font-weight: 600; }
     }
   }
 
-  function syncSoon() {
+  function syncSoon(done) {
     if (!S.lead) return;
     clearTimeout(S.syncTimer);
     S.syncTimer = setTimeout(() => {
-      api('/api/leads/' + S.lead.id + '/progress', {
+      api('/api/leads/' + S.lead.id + '/' + (done ? 'finish' : 'progress'), {
         token: S.lead.token,
         swipes: S.swipes,
         branch: S.branch,
         answers: S.answers,
+        tiebreaks: S.tiebreaks,
       });
-    }, 450);
+    }, done ? 0 : 450);
   }
 
   /* --------------------------------------------------------- brief */
@@ -462,18 +538,15 @@ p.lede b { color: var(--ink); font-weight: 600; }
     const name = $('#f-name').value.trim();
     const email = $('#f-email').value.trim();
     const phone = $('#f-phone').value.trim();
-    const area = $('#f-area').value.trim();
     if (name.length < 2) return ($('#e-brief').textContent = 'A first name is enough.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return ($('#e-brief').textContent = 'That email does not look right.');
-    if (area.length < 2) return ($('#e-brief').textContent = 'Even a rough area helps.');
     $('#e-brief').textContent = '';
     S.contact = { name, email, phone };
-    S.area = area;
-    $('#ref').textContent = 'Brief in progress';
+    $('#ref').textContent = 'Narrowing';
 
     const btn = $('#to-round');
     btn.disabled = true;
-    const created = await api('/api/leads', { name, email, phone, area }, 3500);
+    const created = await api('/api/leads', { name, email, phone }, 3500);
     btn.disabled = false;
     if (created && created.id) S.lead = { id: created.id, token: created.token };
     startRound(1);
@@ -650,7 +723,7 @@ p.lede b { color: var(--ink); font-weight: 600; }
   function endRound() {
     if (S.round === 1) { S.branch = Q.decideBranch(S.swipes); syncSoon(); gate(2); }
     else if (S.round === 2) gate(3);
-    else askQuestion(0);
+    else startTaps();
   }
 
   function gate(next) {
@@ -666,10 +739,10 @@ p.lede b { color: var(--ink); font-weight: 600; }
         : 'You passed on all six, which is useful too. The next six come at it from another angle.';
       yes.forEach((s) => learned.appendChild(el('li', '', '✓ ' + Q.CARDS[s.id].t)));
       if (!yes.length) learned.appendChild(el('li', '', '✗ None of the six'));
-      $('#g-note').textContent = 'Six more cards, then five quick taps.';
+      $('#g-note').textContent = 'Six more cards, then the questions that pick your areas.';
     } else {
       const f = Q.facets(Q.likes(S.swipes, 2).map((s) => ({ id: s.id, dir: 'y' })));
-      $('#g-sub').textContent = 'Water, work and the deal-breakers. This round decides what actually gets sent to you.';
+      $('#g-sub').textContent = 'Water, work and the deal-breakers. This round decides which communities make the list.';
       f.want.forEach((row) => learned.appendChild(el('li', '', row.key + ': ' + row.values.join(', '))));
       if (!f.want.length) learned.appendChild(el('li', '', 'Nothing in round two landed, so we keep it broad.'));
       $('#g-note').textContent = 'Last six cards.';
@@ -679,58 +752,143 @@ p.lede b { color: var(--ink); font-weight: 600; }
     show('s-gate');
   }
 
-  /* ------------------------------------------------------ readiness */
-  function askQuestion(i) {
-    if (i >= QORDER.length) return result();
-    S.qIndex = i;
-    const spec = QORDER[i];
-    const group = Q.QUESTIONS[spec.key];
-    $('#q-step').textContent = 'Question ' + (i + 1) + ' of ' + QORDER.length;
-    $('#q-left').textContent = i === QORDER.length - 1 ? 'Last one' : '';
-    $('#q-title').textContent = spec.title;
-    $('#q-sub').textContent = spec.sub;
+  /* ----------------------------------------------- taps and tie-breaks */
+  function startTaps() {
+    S.taps = BASE_TAPS.slice();
+    S.tapIndex = 0;
+    askTap(0);
+  }
+
+  /**
+   * Once the money questions are in, ask only the questions where the leading
+   * communities actually disagree. Two is usually enough to split them.
+   */
+  function appendTiebreaks() {
+    const picked = C.pickTiebreakers(lead(), 2);
+    for (const tb of picked) S.taps.push({ kind: 'tb', tb: tb });
+  }
+
+  function askTap(i) {
+    if (i >= S.taps.length) {
+      if (!S.taps.some((t) => t.kind === 'tb')) {
+        appendTiebreaks();
+        if (i < S.taps.length) return askTap(i);
+      }
+      return result();
+    }
+    S.tapIndex = i;
+    const tap = S.taps[i];
     const wrap = $('#q-answers');
     wrap.innerHTML = '';
-    group.options.forEach((o) => {
-      const b = el('button', 'answer');
-      b.type = 'button';
-      b.setAttribute('role', 'radio');
-      b.setAttribute('aria-checked', String(S.answers[spec.key] === o.id));
-      b.appendChild(el('span', '', o.l));
-      b.appendChild(el('span', 'tick', '✓'));
-      b.addEventListener('click', () => {
-        S.answers[spec.key] = o.id;
-        wrap.querySelectorAll('.answer').forEach((a) => a.setAttribute('aria-checked', 'false'));
-        b.setAttribute('aria-checked', 'true');
-        syncSoon();
-        setTimeout(() => askQuestion(i + 1), 190);
+    const tbCount = S.taps.filter((t) => t.kind === 'tb').length;
+
+    if (tap.kind === 'q') {
+      const group = Q.QUESTIONS[tap.key];
+      $('#q-step').textContent = 'Question ' + (i + 1) + ' of ' + BASE_TAPS.length;
+      $('#q-left').textContent = i === BASE_TAPS.length - 1 ? 'Then your areas' : '';
+      $('#q-title').textContent = tap.title;
+      $('#q-sub').textContent = tap.sub;
+      group.options.forEach((o) => {
+        wrap.appendChild(answerButton(o.l, S.answers[tap.key] === o.id, () => {
+          S.answers[tap.key] = o.id;
+          syncSoon();
+          nextTap(i);
+        }));
       });
-      wrap.appendChild(b);
-    });
-    $('#q-back').onclick = () => (i === 0 ? startRound(3) : askQuestion(i - 1));
+    } else {
+      const done = S.taps.slice(0, i).filter((t) => t.kind === 'tb').length;
+      $('#q-step').textContent = 'Splitting your shortlist · ' + (done + 1) + ' of ' + tbCount;
+      $('#q-left').textContent = '';
+      $('#q-title').textContent = tap.tb.q;
+      $('#q-sub').textContent = tap.tb.sub;
+      tap.tb.options.forEach((o) => {
+        wrap.appendChild(answerButton(o.l, S.tiebreaks[tap.tb.id] === o.id, () => {
+          S.tiebreaks[tap.tb.id] = o.id;
+          syncSoon();
+          nextTap(i);
+        }));
+      });
+    }
+
+    $('#q-shortlisting').innerHTML = '';
+    const leading = C.match(lead(), { limit: 3 }).top;
+    if (leading.length && (S.answers.budget || i >= 2)) {
+      $('#q-shortlisting').appendChild(document.createTextNode('Leading so far: '));
+      $('#q-shortlisting').appendChild(el('b', '', leading.map((c) => c.name).join(', ')));
+    }
+
+    $('#q-back').onclick = () => (i === 0 ? startRound(3) : askTap(i - 1));
     $('#q-back').textContent = i === 0 ? 'Back to cards' : 'Back';
     show('s-quick');
   }
 
-  /* --------------------------------------------------------- result */
-  function lead() {
-    return {
-      contact: S.contact,
-      area: S.area,
-      swipes: S.swipes,
-      branch: S.branch,
-      answers: S.answers,
-    };
+  function answerButton(label, checked, onPick) {
+    const b = el('button', 'answer');
+    b.type = 'button';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(!!checked));
+    b.appendChild(el('span', '', label));
+    b.appendChild(el('span', 'tick', '✓'));
+    b.addEventListener('click', () => {
+      $('#q-answers').querySelectorAll('.answer').forEach((a) => a.setAttribute('aria-checked', 'false'));
+      b.setAttribute('aria-checked', 'true');
+      onPick();
+    });
+    return b;
   }
 
+  function nextTap(i) {
+    setTimeout(() => {
+      if (i === BASE_TAPS.length - 1 && !S.taps.some((t) => t.kind === 'tb')) appendTiebreaks();
+      askTap(i + 1);
+    }, 190);
+  }
+
+  /* --------------------------------------------------------- result */
   function result() {
-    const h = Q.hotness(lead());
-    const f = Q.facets(S.swipes);
+    const l = lead();
+    const picked = C.match(l, { limit: 3 });
+    const hot = Q.hotness(l);
+    $('#ref').textContent = 'Shortlist ready';
+
+    $('#r-title').textContent = picked.top.length > 1
+      ? (picked.top.length === 3 ? 'Three that fit' : 'Two that fit')
+      : 'One that fits';
+    $('#r-lede').textContent = picked.top.length
+      ? 'Built from ' + S.swipes.length + ' swipes and ' + (Object.keys(S.answers).length + Object.keys(S.tiebreaks).length)
+        + ' answers. Nearest first, with what to watch out for.'
+      : 'Nothing matched cleanly, which usually means the budget and the taste are pulling in different directions.';
+
+    const list = $('#r-areas');
+    list.innerHTML = '';
+    picked.top.forEach((c, i) => list.appendChild(areaCard(c, i + 1)));
+
+    const also = picked.also;
+    $('#r-also').hidden = !also.length;
+    const alsoList = $('#r-also-list');
+    alsoList.innerHTML = '';
+    also.forEach((c) => {
+      const li = el('li');
+      li.appendChild(el('b', '', c.name));
+      li.appendChild(el('span', '', ' · ' + c.kind + 's from ' + c.fromLabel + ' · ' + c.match + '% match'));
+      alsoList.appendChild(li);
+    });
+
+    $('#r-reach').hidden = !picked.outOfReach.length;
+    const reachList = $('#r-reach-list');
+    reachList.innerHTML = '';
+    picked.outOfReach.forEach((c) => {
+      const li = el('li');
+      li.appendChild(el('b', '', c.name));
+      li.appendChild(el('span', '', ' · ' + c.kind + 's start around ' + c.fromLabel));
+      reachList.appendChild(li);
+    });
+
+    /* the brief, folded away underneath */
     $('#r-who').textContent = S.contact.name;
-    $('#r-contact').textContent = [S.contact.email, S.contact.phone, S.area].filter(Boolean).join(' · ');
-    $('#r-grade').textContent = h.label;
-    $('#r-score').textContent = h.value + '/100';
-    $('#ref').textContent = 'Brief complete';
+    $('#r-contact').textContent = [S.contact.email, S.contact.phone].filter(Boolean).join(' · ');
+    $('#r-grade').textContent = hot.label;
+    $('#r-score').textContent = hot.value + '/100';
 
     const rows = $('#r-rows');
     rows.innerHTML = '';
@@ -745,10 +903,12 @@ p.lede b { color: var(--ink); font-weight: 600; }
     };
     add('Budget', (Q.option('budget', S.answers.budget) || {}).l);
     add('For', (Q.option('purpose', S.answers.purpose) || {}).l);
+    add('Week around', (Q.option('commute', S.answers.commute) || {}).l);
     add('Funds', (Q.option('payment', S.answers.payment) || {}).l);
     add('Timing', (Q.option('timeline', S.answers.timeline) || {}).l);
     add('Viewing', (Q.option('viewing', S.answers.viewing) || {}).l);
     add('Leans', Q.BRANCH_NAME[S.branch]);
+    const f = Q.facets(S.swipes);
     f.want.forEach((row) => add(row.key, row.values.join(', ')));
     if (f.no.length) {
       const flat = f.no.reduce((all, row) => all.concat(row.values), []);
@@ -767,45 +927,91 @@ p.lede b { color: var(--ink); font-weight: 600; }
       strip.appendChild(fig);
     });
 
-    const mismatch = h.flags.find((x) => x.tone === 'bad' && /Budget will not reach/.test(x.text));
-    $('#r-note').textContent = mismatch
-      ? 'One thing worth knowing: ' + mismatch.text.replace('Budget will not reach the taste: liked', 'you liked') + '. Your agent will show you the closest thing that fits.'
-      : S.agent.email
-        ? 'Opens your mail app with everything filled in. Nothing sends until you press send.'
-        : 'This link has no agent email set, so the button copies the brief for you to paste.';
+    $('#r-note').textContent = S.agent.email
+      ? 'Opens your mail app with the shortlist filled in. Nothing sends until you press send.'
+      : 'This link has no agent email set, so the button copies the shortlist for you to paste.';
+    if (!S.agent.email) {
+      $('#r-send').textContent = 'Copy my shortlist';
+      $('#r-copy').hidden = true;        // no point offering the same button twice
+    }
 
-    if (S.lead) api('/api/leads/' + S.lead.id + '/finish', { token: S.lead.token, swipes: S.swipes, branch: S.branch, answers: S.answers });
-    if (!S.agent.email) $('#r-send').textContent = 'Copy my brief to send';
+    syncSoon(true);
     show('s-result');
   }
 
+  function areaCard(c, rank) {
+    const li = el('li', 'area');
+
+    const top = el('div', 'area-top');
+    top.appendChild(el('div', 'area-rank', String(rank)));
+    const title = el('div');
+    title.appendChild(el('h3', '', c.name));
+    if (c.aka) title.appendChild(el('p', 'aka', c.aka));
+    top.appendChild(title);
+    const m = el('div', 'area-match');
+    m.appendChild(el('b', '', String(c.match)));
+    m.appendChild(el('span', '', 'match'));
+    top.appendChild(m);
+    li.appendChild(top);
+
+    li.appendChild(el('p', 'blurb', c.blurb));
+
+    if (c.reasons.length) {
+      const why = el('ul', 'why');
+      c.reasons.forEach((r) => why.appendChild(el('li', '', r)));
+      li.appendChild(why);
+    }
+
+    const foot = el('div', 'area-foot');
+    const price = el('span', 'price');
+    price.appendChild(document.createTextNode(cap(c.kind) + 's from '));
+    price.appendChild(el('b', '', c.fromLabel));
+    if (c.budget === 'stretch') price.appendChild(el('span', 'stretch', ' · a stretch on your budget'));
+    foot.appendChild(price);
+    if (c.minutes) foot.appendChild(el('span', '', c.minutes + ' min to work'));
+    li.appendChild(foot);
+
+    const watch = el('p', 'catch');
+    watch.appendChild(el('b', '', 'Watch out: '));
+    watch.appendChild(document.createTextNode(c.catch));
+    li.appendChild(watch);
+    return li;
+  }
+
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  function fullText() {
+    return 'Areas that suit ' + S.contact.name + ':\n\n' + C.shortlistText(lead()) + '\n\n' + Q.briefText(lead());
+  }
+
   $('#r-send').addEventListener('click', () => {
-    const body = Q.briefText(lead());
+    const body = fullText();
     if (S.agent.email) {
       window.location.href = 'mailto:' + encodeURIComponent(S.agent.email)
-        + '?subject=' + encodeURIComponent('Dubai property brief: ' + S.contact.name + ' (' + S.area + ')')
-        + '&body=' + encodeURIComponent(body + '\n\nSent from the swipe brief.\n');
+        + '?subject=' + encodeURIComponent('Dubai area shortlist: ' + S.contact.name)
+        + '&body=' + encodeURIComponent(body + '\n\nSent from the swipe shortlist.\n');
     } else {
       navigator.clipboard?.writeText(body);
-      $('#r-note').textContent = 'Brief copied. Paste it to your agent.';
+      $('#r-note').textContent = 'Shortlist copied. Paste it to your agent.';
     }
   });
 
   $('#r-copy').addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(Q.briefText(lead()));
+      await navigator.clipboard.writeText(fullText());
       $('#r-copy').textContent = 'Copied';
-      setTimeout(() => { $('#r-copy').textContent = 'Copy the brief'; }, 1400);
+      setTimeout(() => { $('#r-copy').textContent = 'Copy the shortlist'; }, 1400);
     } catch (_) {
-      $('#r-note').textContent = 'Copying is blocked here. Screenshot the sheet instead.';
+      $('#r-note').textContent = 'Copying is blocked here. Screenshot the list instead.';
     }
   });
 
   $('#r-again').addEventListener('click', () => {
-    S.swipes = []; S.at = 0; S.round = 0; S.branch = 'mixed'; S.answers = {}; S.lead = null;
+    S.swipes = []; S.at = 0; S.round = 0; S.branch = 'mixed';
+    S.answers = {}; S.tiebreaks = {}; S.taps = []; S.lead = null;
     nodes.forEach((n) => n.remove());
     nodes.clear();
-    $('#ref').textContent = 'Dubai buyer brief';
+    $('#ref').textContent = 'Dubai';
     show('s-welcome');
   });
 

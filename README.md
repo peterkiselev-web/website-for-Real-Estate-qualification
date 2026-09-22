@@ -1,9 +1,14 @@
 # Swipe to Shortlist
 
-A Tinder-style qualification funnel for Dubai estate agents. You send a buyer one
-link. They swipe through three rounds of property pictures that get narrower as
-they go, answer five quick questions about money and timing, and you get a brief
-plus a lead temperature out of 100.
+A Tinder-style area finder and qualification funnel for Dubai estate agents. You
+send a buyer one link. They swipe through three rounds of property pictures that
+get narrower as they go, answer six quick questions, and settle one or two
+tie-breaks. They leave knowing the three communities that suit them. You get the
+same shortlist, plus a lead temperature out of 100.
+
+A buyer who arrives with no idea whether they want Arabian Ranches or Dubai
+Marina leaves with a ranked answer and the reasons behind it. That is the point
+of the thing: the swipes decide the area, not a drop-down.
 
 The temperature is not a completion meter. 100 means the buyer can proceed today:
 money already in the UAE or a mortgage pre-approved, in Dubai and free to view
@@ -47,10 +52,24 @@ asked about mowing a lawn they will never own.
 pool, private pool, plunge pool or none. Plus home office, metro, gym, security,
 whatever is still undecided for their corner.
 
-**Then five taps.** What it is for, budget, how it gets paid for, when they are
-moving, and whether they can view in person. Budget comes after the pictures on
-purpose: by then they have already shown you their taste, so the answer is
-honest rather than aspirational.
+**Then six taps.** What it is for, budget, where their week happens, how it gets
+paid for, when they are moving, and whether they can view in person. Budget comes
+after the pictures on purpose: by then they have already shown you their taste, so
+the answer is honest rather than aspirational. The commute question does more work
+than any other single answer, because in Dubai it decides half the map.
+
+**Then the tie-breaks, which are chosen live.** The page ranks the communities,
+finds where the leaders actually disagree, and asks only about that. Someone torn
+between the beach and the golf gets "Sand or greens?". Someone torn between
+Downtown and the Marina gets "Sea view or skyline?". Someone whose shortlist is
+already decided gets asked nothing. A tie-break outranks the swipes that led to
+it: picking greens pushes the beach down, not just golf up.
+
+**Then the answer: three communities.** Ranked, with a match percentage, the
+reasons drawn from their own swipes, the entry price for the kind of home they
+want, the drive to where they work, and the catch. Plus two runners-up, and an
+honest "out of reach on this budget" line naming what they liked but cannot
+afford.
 
 ## How the temperature is worked out
 
@@ -83,6 +102,8 @@ the number instead of trusting it.
 
 `/agent`, behind a passcode:
 
+- The three matched communities on every lead row, so you know what to send
+  before you open anything.
 - Every lead scored and sorted hottest first, with the six bands that produced
   the number and the flags underneath.
 - Status at a glance: opened, swiping now, on the money questions, finished, or
@@ -113,6 +134,33 @@ https://your-host/#a=Peter%20Kiselev&e=peter@agency.ae
 
 Open the page, expand "Are you the agent? Build your link", and it writes that
 link for you.
+
+## The communities
+
+`lib/communities.js` holds the map: 28 Dubai communities, what each one is,
+entry prices per unit type, drive times to the four places people work, and the
+honest catch. A community looks like this:
+
+```js
+{
+  id: 'arabian-ranches', name: 'Arabian Ranches', kinds: ['villa', 'townhouse'],
+  from: { townhouse: 2600000, villa: 3200000 },
+  attrs: { gated: 3, family: 3, schools: 3, quiet: 3, golf: 2, garage: 3,
+           privatePool: 2, majlis: 2, staffRoom: 2, established: 3 },
+  drive: { downtown: 28, marina: 30, jebelali: 30, deira: 45 },
+  blurb: 'The family villa community everyone compares the others to.',
+  catch: 'You will live in the car, and the beach is half an hour away.',
+}
+```
+
+Matching is a cosine similarity between what the buyer's swipes say and what the
+community is, adjusted for the commute and for whether they can afford the door.
+A villa hunter is never shown an apartment-only tower community. `CARD_SIGNALS`
+maps each card to attributes, so adding a card means adding one line there.
+
+**Keep the prices roughly current.** They drive the shortlist and the
+budget-versus-taste flag. Stale prices make both lie. Same for `drive`: those are
+off-peak estimates, not Google's.
 
 ## The cards
 
@@ -156,7 +204,7 @@ keep retention short and tell buyers who you are.
 ```bash
 npm start      # run it
 npm run dev    # run it with auto restart
-npm test       # 33 unit and HTTP tests, no network needed
+npm test       # 48 unit and HTTP tests, no network needed
 npm run images # redraw the card illustrations
 npm run sync   # copy lib/qualify.js into public/ for flat-file hosting
 ```
@@ -164,6 +212,7 @@ npm run sync   # copy lib/qualify.js into public/ for flat-file hosting
 ```
 server.js                   routing, static files, agent auth, rate limits
 lib/qualify.js              the deck, the rounds, the questions, the hotness model
+lib/communities.js          the 28 communities, the matcher, the tie-break bank
 lib/scoring.js              shapes a lead for the dashboard
 lib/store.js                JSON persistence
 public/shortlist.html       the client funnel, standalone capable
@@ -172,6 +221,7 @@ scripts/generate-images.js  draws public/img/*.svg
 test/                       node:test suites
 ```
 
-`lib/qualify.js` is deliberately a universal module: the server requires it and
-the browser loads the same file, so a lead is scored identically in both places.
-`public/qualify.js` is a generated copy, kept honest by a test.
+`lib/qualify.js` and `lib/communities.js` are deliberately universal modules: the
+server requires them and the browser loads the same files, so a buyer and their
+agent always see the same shortlist and the same score. The copies in `public/`
+are generated by `npm run sync` and kept honest by a test.
