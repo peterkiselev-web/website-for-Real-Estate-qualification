@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img">
+<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9ecff"/><stop offset="1" stop-color="#f7fbff"/></linearGradient><linearGradient id="loftlight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7e2"/><stop offset="1" stop-color="#f7ead0"/></linearGradient></defs>
+<rect width="800" height="600" fill="url(#sky)"/><g transform="translate(650 92) scale(0.8)" fill="#ffffff" opacity="0.55">
+    <ellipse cx="0" cy="0" rx="46" ry="26"/><ellipse cx="38" cy="8" rx="34" ry="20"/><ellipse cx="-36" cy="10" rx="30" ry="18"/>
+  </g><circle cx="112" cy="96" r="38" fill="#ffd166" opacity="0.85"/>
+    <rect x="0" y="536" width="800" height="64" fill="#8ec79f"/>
+    <g>
+      <rect x="150" y="318" width="500" height="222" fill="#f2ede4" stroke="#cdbfa8" stroke-width="5"/>
+      <path d="M126 322 L400 146 L674 322 Z" fill="url(#loftlight)" stroke="#cdbfa8" stroke-width="6"/>
+      <rect x="150" y="424" width="500" height="10" fill="#cdbfa8"/>
+      <rect x="150" y="312" width="500" height="14" fill="#cdbfa8"/>
+    </g>
+    <g>
+      <path d="M470 218 L534 260 L512 296 L448 254 Z" fill="#cfe6f3" stroke="#ffffff" stroke-width="7"/>
+      <path d="M488 230 L502 276" stroke="#ffffff" stroke-width="5"/>
+      <path d="M534 260 L600 220 L612 250 L548 292 Z" fill="#fff6dd" opacity="0.6"/>
+    </g>
+    <g>
+      <g><rect x="236" y="228" width="130" height="74" rx="8" fill="#dfe6ee" stroke="#9aa7b4" stroke-width="3"/><rect x="244" y="236" width="114" height="30" rx="6" fill="#cfd9e4" stroke="#9aa7b4" stroke-width="3"/></g>
+      <rect x="200" y="250" width="30" height="52" rx="6" fill="#dfe6ee" stroke="#9aa7b4" stroke-width="3"/>
+      <rect x="380" y="236" width="60" height="66" rx="6" fill="#e9eff5" stroke="#9aa7b4" stroke-width="3"/>
+      <circle cx="410" cy="222" r="11" fill="#f2e4c2"/>
+      <rect x="548" y="262" width="86" height="40" rx="6" fill="#dfe6ee" stroke="#9aa7b4" stroke-width="3"/>
+      <text x="300" y="200" font-family="Verdana, Geneva, sans-serif" font-size="18" letter-spacing="2" fill="#7a8592" text-anchor="middle">LOFT SUITE</text>
+      <line x1="230" y1="302" x2="620" y2="302" stroke="#d8cbb4" stroke-width="4"/>
+    </g>
+    <g opacity="0.7">
+      <rect x="164" y="336" width="150" height="80" rx="6" fill="#eef2f6" stroke="#c9d3dc" stroke-width="3"/>
+      <rect x="326" y="336" width="150" height="80" rx="6" fill="#eef2f6" stroke="#c9d3dc" stroke-width="3"/>
+      <rect x="488" y="336" width="148" height="80" rx="6" fill="#eef2f6" stroke="#c9d3dc" stroke-width="3"/>
+      <text x="400" y="396" font-family="Verdana, Geneva, sans-serif" font-size="15" letter-spacing="2" fill="#7a8592" text-anchor="middle">BEDROOMS</text>
+      <rect x="164" y="444" width="310" height="86" rx="6" fill="#eef2f6" stroke="#c9d3dc" stroke-width="3"/>
+      <rect x="486" y="444" width="150" height="86" rx="6" fill="#eef2f6" stroke="#c9d3dc" stroke-width="3"/>
+      <text x="319" y="502" font-family="Verdana, Geneva, sans-serif" font-size="15" letter-spacing="2" fill="#7a8592" text-anchor="middle">LIVING</text>
+      <text x="561" y="502" font-family="Verdana, Geneva, sans-serif" font-size="15" letter-spacing="2" fill="#7a8592" text-anchor="middle">KITCHEN</text>
+    </g>
+    <g stroke="#a9997f" stroke-width="3" fill="none">
+      <path d="M700 168 L700 300"/><path d="M692 176 L700 160 L708 176"/><path d="M692 292 L700 308 L708 292"/>
+    </g>
+    <text x="712" y="242" font-family="Verdana, Geneva, sans-serif" font-size="15" letter-spacing="1" fill="#a9997f">2.6 m</text>
+    <g>
+    <rect x="68.8" y="460" width="14.399999999999999" height="96" rx="7.199999999999999" fill="#8a6142"/>
+    <circle cx="43.36" cy="459.84000000000003" r="46.24" fill="#2f7d54"/>
+    <circle cx="109.72800000000001" cy="465.28000000000003" r="42.43200000000001" fill="#2f7d54"/>
+    <circle cx="76" cy="435.36" r="54.400000000000006" fill="#46a06c"/>
+  </g><g>
+    <rect x="729.7" y="478" width="12.6" height="84" rx="6.3" fill="#8a6142"/>
+    <circle cx="707.44" cy="477.86" r="40.46" fill="#2f7d54"/>
+    <circle cx="765.512" cy="482.62" r="37.128" fill="#2f7d54"/>
+    <circle cx="736" cy="456.44" r="47.6" fill="#46a06c"/>
+  </g>
+</svg>

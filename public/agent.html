@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d1017">
+<title>Lead desk</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/agent.css">
+</head>
+<body class="agent">
+<div class="glow glow-a"></div>
+
+<!-- ---------------------------------------------------------- login -->
+<section class="gate" id="gate">
+  <form class="gate-card" id="gate-form">
+    <h1 class="headline">Lead desk</h1>
+    <p class="lede">Everyone who opened your link, and how far they got.</p>
+    <label class="field">
+      <span class="field-label">Passcode</span>
+      <input type="password" id="passcode" autocomplete="current-password" required>
+    </label>
+    <p class="field-error" id="gate-error" role="alert"></p>
+    <button class="btn btn-primary" type="submit">Open the desk</button>
+    <p class="microcopy">Set <code>AGENT_PASSCODE</code> before starting the server. If you did not, the passcode for this run is printed in the terminal.</p>
+  </form>
+</section>
+
+<!-- ---------------------------------------------------------- desk -->
+<main class="desk" id="desk" hidden>
+  <header class="desk-head">
+    <div>
+      <h1 class="desk-title">Lead desk</h1>
+      <p class="desk-sub" id="desk-sub">Loading...</p>
+    </div>
+    <div class="desk-actions">
+      <button class="btn btn-ghost btn-sm" id="btn-refresh">Refresh</button>
+      <a class="btn btn-ghost btn-sm" id="btn-csv" href="/api/agent/leads.csv">Export CSV</a>
+      <button class="btn btn-ghost btn-sm" id="btn-logout">Sign out</button>
+    </div>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <section class="toolbar">
+    <div class="filters" id="filters">
+      <button class="chip" data-filter="all" aria-checked="true" role="radio">Everyone</button>
+      <button class="chip" data-filter="qualified" aria-checked="false" role="radio">Qualified</button>
+      <button class="chip" data-filter="completed" aria-checked="false" role="radio">Finished the deck</button>
+      <button class="chip" data-filter="abandoned" aria-checked="false" role="radio">Dropped out</button>
+      <button class="chip" data-filter="archived" aria-checked="false" role="radio">Archived</button>
+    </div>
+    <input type="search" id="search" placeholder="Search name, email or area" aria-label="Search leads">
+  </section>
+
+  <section class="leads" id="leads"></section>
+  <p class="empty" id="empty" hidden>Nobody here yet. Send someone the link and watch this fill up.</p>
+</main>
+
+<script src="/agent.js"></script>
+</body>
+</html>

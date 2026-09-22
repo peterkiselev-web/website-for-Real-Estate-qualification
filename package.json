@@ -1,0 +1,23 @@
+{
+  "name": "swipehouse",
+  "version": "1.0.0",
+  "description": "Tinder-style property qualification funnel that agents can send to a client as a link.",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "images": "node scripts/generate-images.js",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "real-estate",
+    "lead-qualification",
+    "swipe"
+  ],
+  "license": "MIT",
+  "private": true
+}

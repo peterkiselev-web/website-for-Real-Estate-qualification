@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1017">
+<title>Find your place</title>
+<meta name="description" content="Swipe through homes and tell your agent what you actually want. Takes about a minute.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="glow glow-a"></div>
+<div class="glow glow-b"></div>
+
+<main class="shell" id="shell">
+
+  <!-- ------------------------------------------------ welcome -->
+  <section class="screen screen-welcome is-active" id="screen-welcome">
+    <header class="brandline">
+      <span class="dot"></span>
+      <span id="brand-agency">SwipeHouse</span>
+    </header>
+
+    <div class="fan" aria-hidden="true">
+      <img class="fan-card fan-3" src="/img/green-roof.svg" alt="">
+      <img class="fan-card fan-2" src="/img/pool-private.svg" alt="">
+      <img class="fan-card fan-1" src="/img/style-modern.svg" alt="">
+    </div>
+
+    <h1 class="display">Swipe your way<br>to the right home.</h1>
+    <p class="lede">
+      No questionnaire. No twenty boxes to tick. Just pictures, left or right,
+      and <span id="brand-agent">your agent</span> finally knows what you mean by "something modern with a bit of outside space".
+    </p>
+
+    <button class="btn btn-primary btn-lg" id="btn-start">
+      Start swiping
+      <span class="btn-sub">about 60 seconds</span>
+    </button>
+
+    <button class="btn btn-ghost" id="btn-resume" hidden>Pick up where I left off</button>
+
+    <ul class="assurances">
+      <li>Your answers go to one agent, nobody else</li>
+      <li>Stop any time, half an answer still helps</li>
+    </ul>
+  </section>
+
+  <!-- ------------------------------------------------ brief -->
+  <section class="screen screen-brief" id="screen-brief">
+    <div class="steps" id="brief-steps" aria-hidden="true">
+      <span class="step is-on"></span><span class="step"></span><span class="step"></span>
+    </div>
+
+    <form id="brief-form" novalidate>
+      <!-- step 1 -->
+      <div class="brief-step is-active" data-step="1">
+        <h2 class="headline">First, who are we helping?</h2>
+        <label class="field">
+          <span class="field-label">Your name</span>
+          <input type="text" id="f-name" name="name" autocomplete="name" placeholder="Alex Morgan" maxlength="80" required>
+        </label>
+        <label class="field">
+          <span class="field-label">Email</span>
+          <input type="email" id="f-email" name="email" autocomplete="email" placeholder="alex@email.com" maxlength="120" required inputmode="email">
+        </label>
+        <p class="field-error" id="err-1" role="alert"></p>
+        <button type="button" class="btn btn-primary" data-next="1">Next</button>
+      </div>
+
+      <!-- step 2 -->
+      <div class="brief-step" data-step="2">
+        <h2 class="headline">What are you hunting for?</h2>
+        <div class="chips" id="f-type" role="radiogroup" aria-label="Property type"></div>
+        <label class="field">
+          <span class="field-label">Where, roughly?</span>
+          <input type="text" id="f-location" name="location" placeholder="Shoreditch, or 20 min from the office" maxlength="120">
+        </label>
+        <p class="field-error" id="err-2" role="alert"></p>
+        <div class="row">
+          <button type="button" class="btn btn-ghost" data-back="2">Back</button>
+          <button type="button" class="btn btn-primary" data-next="2">Next</button>
+        </div>
+      </div>
+
+      <!-- step 3 -->
+      <div class="brief-step" data-step="3">
+        <h2 class="headline">Budget and timing</h2>
+        <div class="chips" id="f-budget" role="radiogroup" aria-label="Budget"></div>
+        <p class="field-label spaced">When would you move?</p>
+        <div class="chips" id="f-timeline" role="radiogroup" aria-label="Timeline"></div>
+        <p class="field-error" id="err-3" role="alert"></p>
+        <div class="row">
+          <button type="button" class="btn btn-ghost" data-back="3">Back</button>
+          <button type="submit" class="btn btn-primary" id="btn-deck">Deal me in</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- ------------------------------------------------ deck -->
+  <section class="screen screen-deck" id="screen-deck">
+    <header class="deckbar">
+      <div class="progress">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="deckbar-meta">
+        <span class="cat-pill" id="cat-pill">The building</span>
+        <span class="counter" id="counter">1 of 20</span>
+      </div>
+    </header>
+
+    <div class="stack-wrap">
+      <div class="stack" id="stack" aria-live="polite"></div>
+      <p class="hint" id="hint">Drag the card, or use the buttons</p>
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+
+    <div class="controls">
+      <button class="circle circle-nope" id="btn-nope" aria-label="Not for me">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <button class="circle circle-undo" id="btn-undo" aria-label="Undo last swipe" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-3"/></svg>
+      </button>
+      <button class="circle circle-like" id="btn-like" aria-label="Love it">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5S3.5 15 3.5 9.2A4.7 4.7 0 0 1 12 6.6a4.7 4.7 0 0 1 8.5 2.6c0 5.8-8.5 11.3-8.5 11.3z"/></svg>
+      </button>
+    </div>
+    <p class="keys">Arrow keys work too. Z to undo.</p>
+  </section>
+
+  <!-- ------------------------------------------------ result -->
+  <section class="screen screen-result" id="screen-result">
+    <div class="result-head">
+      <div class="ring" id="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-fg" cx="60" cy="60" r="52" id="ring-fg"></circle>
+        </svg>
+        <div class="ring-value"><span id="score-value">0</span><small>/100</small></div>
+      </div>
+      <h2 class="headline" id="result-title">You are officially qualified</h2>
+      <p class="lede" id="result-sub"></p>
+    </div>
+
+    <div class="panel">
+      <h3 class="panel-title">What you told us without typing a word</h3>
+      <ul class="facets" id="facets"></ul>
+      <div class="likes-strip" id="likes-strip"></div>
+    </div>
+
+    <form class="panel" id="finish-form">
+      <h3 class="panel-title">Anything else <span id="brand-agent-2">your agent</span> should know?</h3>
+      <label class="field">
+        <span class="field-label">Phone (optional, for the quick call)</span>
+        <input type="tel" id="f-phone" autocomplete="tel" placeholder="+44 7700 900000" maxlength="40">
+      </label>
+      <label class="field">
+        <span class="field-label">Note (optional)</span>
+        <textarea id="f-note" rows="2" maxlength="500" placeholder="Must be near a good school, and I hate north facing gardens."></textarea>
+      </label>
+      <button class="btn btn-primary" type="submit" id="btn-send">Send this to my agent</button>
+      <p class="microcopy">Already saved. This just adds the extras.</p>
+    </form>
+
+    <div class="panel panel-done" id="done-panel" hidden>
+      <h3 class="panel-title">Done. That is the whole form.</h3>
+      <p class="lede">
+        <span id="brand-agent-3">Your agent</span> has your shortlist and will come back with places that actually fit.
+      </p>
+      <button class="btn btn-ghost" id="btn-restart">Swipe again</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>
