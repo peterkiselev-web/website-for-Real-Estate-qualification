@@ -223,7 +223,7 @@ function serveFile(req, res, target) {
 }
 
 function serveStatic(req, res, urlPath) {
-  const rel = urlPath === '/' ? 'shortlist.html' : decodeURIComponent(urlPath).replace(/^\/+/, '');
+  const rel = urlPath === '/' ? 'index.html' : decodeURIComponent(urlPath).replace(/^\/+/, '');
   const target = path.resolve(PUBLIC_DIR, rel);
   if (!target.startsWith(PUBLIC_DIR + path.sep) && target !== PUBLIC_DIR) {
     return fail(res, 403, 'Forbidden');

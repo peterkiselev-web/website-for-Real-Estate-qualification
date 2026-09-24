@@ -36,6 +36,41 @@ flat files, the buyer's brief arrives by email when they press send.
 The dashboard passcode is printed in the terminal on first run. Set your own with
 `AGENT_PASSCODE` so it survives a restart.
 
+## Putting it online
+
+The buyer-facing page is deliberately self-contained: it runs with no server
+behind it, so it can be hosted anywhere that serves flat files.
+
+**GitHub Pages, free, no account needed anywhere else.** The `docs` folder in
+this repo is a complete, ready-to-serve copy of the site. In the repository go to
+**Settings**, then **Pages** in the left sidebar, then under **Source** choose
+**Deploy from a branch**, pick branch **main** and folder **/docs**, and press
+**Save**. A minute later the site is live at
+
+```
+https://<your-username>.github.io/<repository-name>/
+```
+
+Add your name and email to the end of the link so briefs reach you:
+
+```
+https://<your-username>.github.io/<repository-name>/#a=Your%20Name&e=you@agency.ae
+```
+
+What you get: the whole funnel, the area shortlist, on any phone. What you do not
+get: the agent dashboard and saved leads, because those need a server. On Pages a
+buyer's brief reaches you when they press send at the end, and anyone who quits
+halfway is invisible to you.
+
+**For the dashboard and the drop-outs**, run `npm start` on a host that can run
+Node. The same client page then saves every swipe as it happens.
+
+Rebuild the static copy after changing the client page:
+
+```bash
+npm run pages
+```
+
 ## How the funnel narrows
 
 There is no fixed deck. Every card knows which communities survive a yes and

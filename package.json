@@ -12,7 +12,9 @@
     "dev": "node --watch server.js",
     "images": "node scripts/generate-images.js",
     "sync": "node scripts/sync-standalone.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "pages": "node scripts/build-pages.js",
+    "build": "npm run images && npm run sync && npm run pages"
   },
   "keywords": [
     "real-estate",

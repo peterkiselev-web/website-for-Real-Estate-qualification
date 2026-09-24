@@ -220,3 +220,19 @@ test('the questions and the money vocabulary still answer', () => {
   assert.ok(Q.validEmail('a@b.co'));
   assert.ok(!Q.validEmail('nope'));
 });
+
+test('the static site is built from the current client page', () => {
+  const fragment = fs.readFileSync(path.join(__dirname, '..', 'public', 'shortlist.html'), 'utf8');
+  const expected = require('../scripts/build-pages').wrap(fragment);
+  for (const file of ['public/index.html', 'docs/index.html']) {
+    const built = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    assert.equal(built, expected, `${file} is stale, run \`npm run pages\``);
+  }
+  // Phones need this or the page renders at desktop width.
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'docs', 'index.html'), 'utf8'), /name="viewport"/);
+  for (const name of ['qualify.js', 'communities.js', 'funnel.js']) {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'lib', name), 'utf8');
+    const copy = fs.readFileSync(path.join(__dirname, '..', 'docs', name), 'utf8');
+    assert.equal(copy, src, `docs/${name} is stale, run \`npm run pages\``);
+  }
+});

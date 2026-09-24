@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img">
+<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe9ff"/><stop offset="1" stop-color="#f4fbff"/></linearGradient></defs>
+<rect width="800" height="600" fill="url(#sky)"/><circle cx="690" cy="110" r="46" fill="#ffd166" opacity="0.85"/><g transform="translate(180 120) scale(1)" fill="#ffffff" opacity="0.7">
+    <ellipse cx="0" cy="0" rx="46" ry="26"/><ellipse cx="38" cy="8" rx="34" ry="20"/><ellipse cx="-36" cy="10" rx="30" ry="18"/>
+  </g>
+    <rect x="0" y="366" width="800" height="234" fill="#6fc08a"/>
+    <path d="M-100 600 L60 366 L150 366 L30 600 Z" fill="#79c999"/><path d="M30 600 L156 366 L246 366 L160 600 Z" fill="#63b986"/><path d="M160 600 L252 366 L342 366 L290 600 Z" fill="#79c999"/><path d="M290 600 L348 366 L438 366 L420 600 Z" fill="#63b986"/><path d="M420 600 L444 366 L534 366 L550 600 Z" fill="#79c999"/><path d="M550 600 L540 366 L630 366 L680 600 Z" fill="#63b986"/><path d="M680 600 L636 366 L726 366 L810 600 Z" fill="#79c999"/><path d="M810 600 L732 366 L822 366 L940 600 Z" fill="#63b986"/>
+    <g>
+      <rect x="0" y="300" width="800" height="66" fill="#3f8a5f"/>
+      <path d="M0 300 q 40 -26 80 0 t 80 0 t 80 0 t 80 0 t 80 0 t 80 0 t 80 0 t 80 0 t 80 0" fill="#3f8a5f"/>
+    </g>
+    <g>
+    <rect x="300" y="210" width="210" height="96" fill="#fbf7f1"/>
+    <path d="M284 210 L405 162 L526 210 Z" fill="#5c6f85"/>
+    <rect x="388.2" y="253.2" width="37.8" height="52.800000000000004" rx="4" fill="#d9734f"/>
+    <rect x="321" y="229.2" width="46.2" height="28.799999999999997" rx="3" fill="#a9cfe6" stroke="#ffffff" stroke-width="4"/>
+    <rect x="442.8" y="229.2" width="46.2" height="28.799999999999997" rx="3" fill="#a9cfe6" stroke="#ffffff" stroke-width="4"/>
+  </g>
+    <g>
+    <rect x="103.25" y="250" width="13.5" height="90" rx="6.75" fill="#8a6142"/>
+    <circle cx="79.4" cy="249.85" r="43.35" fill="#2f7d54"/>
+    <circle cx="141.62" cy="254.95" r="39.78000000000001" fill="#2f7d54"/>
+    <circle cx="110" cy="226.9" r="51.00000000000001" fill="#46a06c"/>
+  </g><g>
+    <rect x="652.35" y="244" width="15.299999999999999" height="102" rx="7.6499999999999995" fill="#8a6142"/>
+    <circle cx="625.32" cy="243.83" r="49.13" fill="#2f7d54"/>
+    <circle cx="695.836" cy="249.61" r="45.084" fill="#2f7d54"/>
+    <circle cx="660" cy="217.82000000000002" r="57.800000000000004" fill="#4aa473"/>
+  </g>
+    <g>
+      <rect x="520" y="404" width="140" height="10" rx="5" fill="#e4dccf"/>
+      <rect x="536" y="414" width="12" height="30" fill="#c8bfae"/>
+      <rect x="632" y="414" width="12" height="30" fill="#c8bfae"/>
+      <rect x="520" y="384" width="140" height="12" rx="6" fill="#efe7da"/>
+    </g>
+    <g fill="#46a06c"><circle cx="163.2" cy="372" r="19.599999999999998"/><circle cx="196.8" cy="372" r="18.2"/><circle cx="180" cy="363.6" r="28"/></g><g fill="#8ed3a4"><circle cx="218.8" cy="376" r="15.399999999999999"/><circle cx="245.2" cy="376" r="14.3"/><circle cx="232" cy="369.4" r="22"/></g>
+    <ellipse cx="400" cy="420" rx="120" ry="12" fill="rgba(29,39,51,0.12)"/>
+</svg>
