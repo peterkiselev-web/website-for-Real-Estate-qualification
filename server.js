@@ -18,6 +18,7 @@ const { LeadStore } = require('./lib/store');
 const scoring = require('./lib/scoring');
 const Q = require('./lib/qualify');
 const C = require('./lib/communities');
+const F = require('./lib/funnel');
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -166,25 +167,16 @@ function cleanAnswers(input) {
 }
 
 function cleanSwipes(input) {
-  const list = Array.isArray(input) ? input.slice(0, 120) : [];
+  const list = Array.isArray(input) ? input.slice(0, F.MAX_CARDS * 2) : [];
   const seen = new Set();
   const out = [];
   for (const swipe of list) {
     const id = str(swipe && swipe.id, 40);
-    if (!Q.CARDS[id] || seen.has(id)) continue;
+    if (!F.BY_ID[id] || seen.has(id)) continue;
     seen.add(id);
-    out.push({
-      id,
-      dir: swipe.dir === 'y' ? 'y' : 'n',
-      round: [1, 2, 3].includes(Number(swipe.round)) ? Number(swipe.round) : 1,
-    });
+    out.push({ id, dir: swipe.dir === 'y' ? 'y' : 'n' });
   }
   return out;
-}
-
-function cleanBranch(value) {
-  const branch = str(value, 20);
-  return Q.BRANCH_NAME[branch] ? branch : 'mixed';
 }
 
 /** Only tie-breaks the bank actually offers, and only options it defines. */
@@ -246,7 +238,12 @@ async function handle(req, res, url) {
   const method = req.method;
 
   if (method === 'GET' && pathname === '/api/config') {
-    return send(res, 200, { branding: BRANDING, questions: Q.QUESTIONS, deckSize: scoring.DECK_SIZE });
+    return send(res, 200, {
+      branding: BRANDING,
+      questions: Q.QUESTIONS,
+      communities: C.COMMUNITIES.length,
+      maxCards: F.MAX_CARDS,
+    });
   }
 
   // ---- a client starts ------------------------------------------------
@@ -263,13 +260,7 @@ async function handle(req, res, url) {
     if (!contact.name) return fail(res, 400, 'Tell us your name.');
     if (!scoring.validEmail(contact.email)) return fail(res, 400, 'That email does not look right.');
 
-    const lead = store.create({
-      contact,
-      area: str(body.area, 120),
-      swipes: [],
-      answers: {},
-      branch: 'mixed',
-    });
+    const lead = store.create({ contact, swipes: [], answers: {} });
     return send(res, 201, { id: lead.id, token: lead.token });
   }
 
@@ -285,7 +276,6 @@ async function handle(req, res, url) {
     const swipes = cleanSwipes(body.swipes);
     const answers = cleanAnswers(body.answers);
     const tiebreaks = cleanTiebreaks(body.tiebreaks);
-    const branch = cleanBranch(body.branch);
     const note = str(body.note, 500);
     const phone = str(body.phone, 40);
 
@@ -293,7 +283,6 @@ async function handle(req, res, url) {
       if (swipes.length >= (l.swipes || []).length) l.swipes = swipes;
       l.answers = { ...(l.answers || {}), ...answers };
       l.tiebreaks = { ...(l.tiebreaks || {}), ...tiebreaks };
-      l.branch = branch;
       if (note) l.note = note;
       if (phone) l.contact.phone = phone;
       if (leadMatch[2] === 'finish') l.completedAt = l.completedAt || new Date().toISOString();
@@ -351,8 +340,8 @@ async function handle(req, res, url) {
     if (method === 'GET' && pathname === '/api/agent/leads.csv') {
       const rows = [[
         'name', 'email', 'phone', 'areas', 'status', 'hotness', 'temperature',
-        'budget', 'funds', 'timing', 'viewing', 'purpose', 'commute', 'leans',
-        'cards', 'flags', 'created',
+        'budget', 'funds', 'timing', 'viewing', 'purpose', 'commute', 'looking for',
+        'cards', 'narrowed to', 'flags', 'created',
       ]];
       for (const lead of store.all()) {
         const s = scoring.summarise(lead);
@@ -362,7 +351,8 @@ async function handle(req, res, url) {
           s.status, s.hotness.value, s.hotness.label,
           s.answers.budget, s.answers.payment, s.answers.timeline, s.answers.viewing,
           s.answers.purpose, s.answers.commute,
-          s.branchLabel, s.progress.done + '/' + s.progress.of,
+          s.kindLabel, s.progress.done,
+          s.narrowing.to + ' of ' + s.narrowing.from,
           s.hotness.flags.map((f) => f.text).join(' | '),
           s.createdAt,
         ]);
@@ -401,6 +391,7 @@ async function handle(req, res, url) {
     // One copy of the engine, served straight from lib so it cannot drift.
     if (pathname === '/qualify.js') return serveFile(req, res, path.join(__dirname, 'lib', 'qualify.js'));
     if (pathname === '/communities.js') return serveFile(req, res, path.join(__dirname, 'lib', 'communities.js'));
+    if (pathname === '/funnel.js') return serveFile(req, res, path.join(__dirname, 'lib', 'funnel.js'));
     return serveStatic(req, res, pathname);
   }
 

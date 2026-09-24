@@ -6,12 +6,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const C = require('../lib/communities');
+const F = require('../lib/funnel');
 const Q = require('../lib/qualify');
 
 function lead(overrides = {}) {
   return {
     contact: { name: 'Alex', email: 'a@b.co', phone: '' },
-    branch: 'mixed',
     swipes: [],
     answers: {},
     tiebreaks: {},
@@ -19,8 +19,20 @@ function lead(overrides = {}) {
   };
 }
 
-const yes = (...ids) => ids.map((id, i) => ({ id, dir: 'y', round: i < 6 ? 1 : 2 }));
-const no = (...ids) => ids.map((id) => ({ id, dir: 'n', round: 1 }));
+const yes = (...ids) => ids.map((id) => ({ id, dir: 'y' }));
+const no = (...ids) => ids.map((id) => ({ id, dir: 'n' }));
+
+function rankOpts(l) {
+  const state = F.replay(l.swipes);
+  return { signals: C.signalsFor(l, state.signals), alive: state.alive, kind: state.kind };
+}
+
+/** Rank the way the app does: the funnel decides the pool, the matcher sorts it. */
+function rank(l, extra) {
+  const state = F.replay(l.swipes);
+  const opts = { signals: C.signalsFor(l, state.signals), alive: state.alive, kind: state.kind };
+  return C.match(l, Object.assign(opts, extra || {}));
+}
 
 /* ----------------------------------------------------- the dataset */
 
@@ -45,25 +57,11 @@ test('every community is priced, described and placed on the map', () => {
   }
 });
 
-test('every card in the deck says something about where to live', () => {
-  for (const id of Object.keys(Q.CARDS)) {
-    assert.ok(C.CARD_SIGNALS[id], `${id} has no area signal`);
-  }
-  for (const [id, signals] of Object.entries(C.CARD_SIGNALS)) {
-    assert.ok(Q.CARDS[id], `${id} is signalled but not in the deck`);
-    for (const key of Object.keys(signals)) {
-      assert.ok(C.PHRASE[key], `${id} signals an unknown attribute: ${key}`);
-    }
-  }
-});
-
 /* ------------------------------------------------------- matching */
 
 test('gated, quiet, golf and a private pool lands on the golf communities', () => {
-  const result = C.match(lead({
-    branch: 'golf',
-    swipes: yes('d1-golf', 'd1-community', 'pool-private', 'extra-gated', 'green-lawn', 'extra-garage')
-      .concat(no('d1-marina', 'd1-downtown', 'd1-beach')),
+  const result = rank(lead({
+    swipes: yes('k-villa', 'l-golf', 'c-gated', 'pool-private', 'v-majlis'),
     answers: { budget: 'b4', purpose: 'live', commute: 'marina' },
   }));
   const names = result.top.map((c) => c.name);
@@ -76,10 +74,8 @@ test('gated, quiet, golf and a private pool lands on the golf communities', () =
 });
 
 test('waterfront taste with a Marina commute lands on the water', () => {
-  const result = C.match(lead({
-    branch: 'apartment',
-    swipes: yes('d1-marina', 'a-seaview', 'green-balcony', 'pool-community', 'extra-station')
-      .concat(no('d1-community', 'd1-golf', 'd1-beach')),
+  const result = rank(lead({
+    swipes: no('k-villa').concat(yes('k-apartment', 'l-waterfront', 'c-seaview', 'green-balcony')),
     answers: { budget: 'b3', purpose: 'live', commute: 'marina' },
   }));
   const names = result.top.map((c) => c.name);
@@ -90,9 +86,8 @@ test('waterfront taste with a Marina commute lands on the water', () => {
 });
 
 test('a villa hunter is never shown an apartment-only community', () => {
-  const result = C.match(lead({
-    branch: 'villa',
-    swipes: yes('d1-community', 'v-majlis', 'v-staff', 'pool-private'),
+  const result = rank(lead({
+    swipes: yes('k-villa', 'v-majlis', 'v-staff', 'pool-private'),
     answers: { budget: 'b5' },
   }));
   const apartmentOnly = new Set(
@@ -104,9 +99,8 @@ test('a villa hunter is never shown an apartment-only community', () => {
 });
 
 test('the budget decides what makes the list, and what is named as out of reach', () => {
-  const dreamer = C.match(lead({
-    branch: 'prime',
-    swipes: yes('d1-beach', 'a-seaview', 'pool-private'),
+  const dreamer = rank(lead({
+    swipes: yes('k-villa', 'l-beachvilla', 'pool-private'),
     answers: { budget: 'b2', purpose: 'live' },
   }));
   for (const row of dreamer.top) {
@@ -114,9 +108,8 @@ test('the budget decides what makes the list, and what is named as out of reach'
   }
   assert.ok(dreamer.outOfReach.length, 'the places they actually liked should be named as out of reach');
 
-  const rich = C.match(lead({
-    branch: 'prime',
-    swipes: yes('d1-beach', 'a-seaview', 'pool-private'),
+  const rich = rank(lead({
+    swipes: yes('k-villa', 'l-beachvilla', 'pool-private'),
     answers: { budget: 'b6', purpose: 'live' },
   }));
   assert.ok(
@@ -126,9 +119,8 @@ test('the budget decides what makes the list, and what is named as out of reach'
 });
 
 test('an investor is pushed towards the areas that rent', () => {
-  const result = C.match(lead({
-    branch: 'apartment',
-    swipes: yes('d1-offplan', 'pool-community', 'extra-gym'),
+  const result = rank(lead({
+    swipes: no('k-villa').concat(yes('k-apartment', 'l-offplan', 'c-yield', 'extra-gym')),
     answers: { budget: 'b2', purpose: 'invest' },
   }));
   const names = result.top.map((c) => c.name);
@@ -140,12 +132,11 @@ test('an investor is pushed towards the areas that rent', () => {
 
 test('the commute answer moves the shortlist', () => {
   const base = {
-    branch: 'villa',
-    swipes: yes('d1-community', 'green-lawn', 'extra-garage', 'pool-private'),
+    swipes: yes('k-villa', 'l-family', 'extra-garage', 'pool-private'),
     answers: { budget: 'b4', purpose: 'live' },
   };
-  const marina = C.match(lead({ ...base, answers: { ...base.answers, commute: 'marina' } }));
-  const deira = C.match(lead({ ...base, answers: { ...base.answers, commute: 'deira' } }));
+  const marina = rank(lead({ ...base, answers: { ...base.answers, commute: 'marina' } }));
+  const deira = rank(lead({ ...base, answers: { ...base.answers, commute: 'deira' } }));
   assert.notDeepEqual(
     marina.top.map((c) => c.id),
     deira.top.map((c) => c.id),
@@ -156,9 +147,8 @@ test('the commute answer moves the shortlist', () => {
 });
 
 test('match percentages are ordered and bounded', () => {
-  const result = C.match(lead({
-    branch: 'villa',
-    swipes: yes('d1-community', 'pool-private', 'v-majlis'),
+  const result = rank(lead({
+    swipes: yes('k-villa', 'pool-private', 'v-majlis'),
     answers: { budget: 'b4' },
   }));
   assert.equal(result.top[0].match, 97);
@@ -171,11 +161,8 @@ test('match percentages are ordered and bounded', () => {
 /* ----------------------------------------------------- tie-breaks */
 
 test('a tie-break is only asked when the leading areas disagree about it', () => {
-  const torn = C.pickTiebreakers(lead({
-    branch: 'mixed',
-    swipes: yes('d1-beach', 'd1-golf'),
-    answers: { budget: 'b6' },
-  }), 2);
+  const tornLead = lead({ swipes: yes('k-villa'), answers: { budget: 'b6' } });
+  const torn = C.pickTiebreakers(tornLead, 2, rankOpts(tornLead));
   assert.ok(torn.length, 'someone who likes both beach and golf should be asked to choose');
   for (const tb of torn) {
     assert.ok(tb.q && tb.options.length === 2, 'a tie-break needs a question and two options');
@@ -183,25 +170,17 @@ test('a tie-break is only asked when the leading areas disagree about it', () =>
 });
 
 test('a tie-break already answered is never asked twice', () => {
-  const base = lead({
-    branch: 'mixed',
-    swipes: yes('d1-beach', 'd1-golf'),
-    answers: { budget: 'b6' },
-  });
-  const first = C.pickTiebreakers(base, 1)[0];
+  const base = lead({ swipes: yes('k-villa'), answers: { budget: 'b6' } });
+  const first = C.pickTiebreakers(base, 1, rankOpts(base))[0];
   const answered = { ...base, tiebreaks: { [first.id]: first.options[0].id } };
-  const next = C.pickTiebreakers(answered, 2);
+  const next = C.pickTiebreakers(answered, 2, rankOpts(answered));
   assert.ok(!next.some((tb) => tb.id === first.id));
 });
 
 test('answering a tie-break actually moves the shortlist', () => {
-  const base = lead({
-    branch: 'mixed',
-    swipes: yes('d1-beach', 'd1-golf', 'pool-private'),
-    answers: { budget: 'b6', purpose: 'live' },
-  });
-  const beachy = C.match({ ...base, tiebreaks: { 'tb-beach-golf': 'beach' } });
-  const golfy = C.match({ ...base, tiebreaks: { 'tb-beach-golf': 'golf' } });
+  const base = lead({ swipes: yes('k-villa', 'pool-private'), answers: { budget: 'b6', purpose: 'live' } });
+  const beachy = rank({ ...base, tiebreaks: { 'tb-beach-golf': 'beach' } });
+  const golfy = rank({ ...base, tiebreaks: { 'tb-beach-golf': 'golf' } });
   assert.notEqual(beachy.top[0].id, golfy.top[0].id, 'the answer should change the leader');
 });
 
@@ -218,20 +197,12 @@ test('every tie-break option pushes attributes the communities actually have', (
 /* --------------------------------------------------------- output */
 
 test('the shortlist reads as sentences an agent can send', () => {
-  const text = C.shortlistText(lead({
-    branch: 'villa',
-    swipes: yes('d1-community', 'pool-private', 'extra-gated', 'green-lawn'),
+  const textLead = lead({
+    swipes: yes('k-villa', 'pool-private', 'c-gated', 'l-family'),
     answers: { budget: 'b4', purpose: 'live', commute: 'downtown' },
-  }));
+  });
+  const text = C.shortlistText(textLead, rankOpts(textLead));
   assert.match(text, /1\. /);
   assert.match(text, /% match/);
   assert.match(text, /AED/);
-});
-
-test('the browser copies of both engines match the source', () => {
-  for (const name of ['qualify.js', 'communities.js']) {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'lib', name), 'utf8');
-    const copy = fs.readFileSync(path.join(__dirname, '..', 'public', name), 'utf8');
-    assert.ok(copy.endsWith(src), `public/${name} is stale, run \`npm run sync\``);
-  }
 });

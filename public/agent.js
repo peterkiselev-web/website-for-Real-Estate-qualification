@@ -89,7 +89,7 @@
       if (state.filter === 'viewing' && !/here_now|here_soon|flying/.test(viewingId(lead))) return false;
       if (state.filter === 'abandoned' && lead.status !== 'abandoned') return false;
       if (state.query) {
-        const hay = [lead.contact.name, lead.contact.email, lead.contact.phone, lead.branchLabel]
+        const hay = [lead.contact.name, lead.contact.email, lead.contact.phone, lead.kindLabel]
           .concat(lead.areas.top.map((a) => a.name))
           .join(' ').toLowerCase();
         if (!hay.includes(state.query)) return false;
@@ -188,7 +188,8 @@
       lead.answers.budget,
       lead.answers.payment,
       lead.answers.commute && `works around ${lead.answers.commute}`,
-      `${lead.progress.done}/${lead.progress.of} cards`,
+      `${lead.progress.done} cards`,
+      `${lead.narrowing.to} of ${lead.narrowing.from} areas left`,
       timeAgo(lead.updatedAt),
     ].filter(Boolean).join(' · ');
     left.appendChild(line);
@@ -204,7 +205,7 @@
     if (flags.children.length) left.appendChild(flags);
 
     if (lead.dropOff) {
-      left.appendChild(el('div', 'dropoff', `Left ${lead.dropOff.stage}. ${lead.dropOff.seen} of ${lead.dropOff.of} cards done.`));
+      left.appendChild(el('div', 'dropoff', `Left ${lead.dropOff.stage}, ${lead.dropOff.seen} cards in, narrowed to ${lead.dropOff.narrowedTo} areas.`));
     }
 
     const right = el('div', 'lead-score');
@@ -308,7 +309,7 @@
       ['Funds', lead.answers.payment],
       ['Timing', lead.answers.timeline],
       ['Viewing', lead.answers.viewing],
-      ['Leans', lead.branchLabel],
+      ['Looking for', lead.kindLabel],
     ].forEach(([k, v]) => {
       if (!v) return;
       const li = el('li');

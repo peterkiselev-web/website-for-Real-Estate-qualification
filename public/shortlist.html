@@ -30,6 +30,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; }
 body {
   margin: 0; background: var(--paper); color: var(--ink);
@@ -323,9 +324,9 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
       <b id="agent-name-1">your agent</b> gets the same answer you do.
     </p>
     <ol class="steps-preview">
-      <li><span class="n">1</span><span class="t"><b>Wide net.</b> <span>Marina, Downtown, villas, off-plan. We find your corner.</span></span></li>
-      <li><span class="n">2</span><span class="t"><b>Narrow it.</b> <span>Only what suits the corner you picked.</span></span></li>
-      <li><span class="n">3</span><span class="t"><b>Split the tie.</b> <span>Beach or golf, metro or space, new or grown in.</span></span></li>
+      <li><span class="n">1</span><span class="t"><b>Villa, apartment or townhouse.</b> <span>One answer and half the map goes.</span></span></li>
+      <li><span class="n">2</span><span class="t"><b>Where.</b> <span>Golf, beach, lagoon, city. Only the ones still possible.</span></span></li>
+      <li><span class="n">3</span><span class="t"><b>Which community.</b> <span>Questions that split the ones left.</span></span></li>
       <li><span class="n">4</span><span class="t"><b>Your areas.</b> <span>Three communities, why each one, and the catch.</span></span></li>
     </ol>
     <button class="btn push" id="go">Start round one<span class="sub">About two minutes</span></button>
@@ -352,7 +353,8 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
   <!-- ------------------------------------------------- interstitial -->
   <section class="screen" id="s-gate">
     <div class="gate">
-      <div class="rnum" id="g-num">2</div>
+      <div class="rnum" id="g-num">12</div>
+      <p class="eyebrow" id="g-eyebrow">Areas still in play</p>
       <h2 class="display" id="g-title">Now we narrow</h2>
       <p class="lede" id="g-sub"></p>
       <ul class="learned" id="g-learned"></ul>
@@ -364,8 +366,14 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
   <!-- --------------------------------------------------------- deck -->
   <section class="screen" id="s-deck">
     <div class="roundbar">
-      <div class="track"><span class="seg"><i id="seg1"></i></span><span class="seg"><i id="seg2"></i></span><span class="seg"><i id="seg3"></i></span></div>
-      <div class="meta"><span class="name" id="r-name">Round 1 · Wide net</span><span class="count" id="r-count">1 of 6</span></div>
+      <div class="track">
+        <span class="seg"><i id="seg1"></i></span><span class="seg"><i id="seg2"></i></span>
+        <span class="seg"><i id="seg3"></i></span><span class="seg"><i id="seg4"></i></span>
+      </div>
+      <div class="meta">
+        <span class="name" id="r-name">What kind of home</span>
+        <span class="count"><b id="r-alive">28</b> areas left</span>
+      </div>
     </div>
     <div class="stack-wrap">
       <div class="stack" id="stack" aria-live="polite"></div>
@@ -425,12 +433,14 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
 
 <script src="qualify.js"></script>
 <script src="communities.js"></script>
+<script src="funnel.js"></script>
 
 <script>
 (() => {
   'use strict';
   const Q = window.Qualify;
   const C = window.Communities;
+  const F = window.Funnel;
 
   const $ = (s) => document.querySelector(s);
   const el = (tag, cls, text) => {
@@ -443,8 +453,7 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
   const S = {
     agent: { name: 'your agent', email: '' },
     contact: { name: '', email: '', phone: '' },
-    round: 0, queue: [], at: 0,
-    swipes: [], branch: 'mixed',
+    swipes: [],
     answers: {}, tiebreaks: {},
     taps: [], tapIndex: 0,
     locked: false,
@@ -461,12 +470,17 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
     { kind: 'q', key: 'viewing', title: 'Can you view in person?', sub: '' },
   ];
 
+  /** The funnel decides the live pool and the kind; the matcher ranks it. */
+  function matchOpts(l) {
+    const st = F.replay(l.swipes);
+    return { signals: C.signalsFor(l, st.signals), alive: st.alive, kind: st.kind, state: st };
+  }
+
   function lead() {
     return {
       contact: S.contact,
       area: '',
       swipes: S.swipes,
-      branch: S.branch,
       answers: S.answers,
       tiebreaks: S.tiebreaks,
     };
@@ -524,7 +538,6 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
       api('/api/leads/' + S.lead.id + '/' + (done ? 'finish' : 'progress'), {
         token: S.lead.token,
         swipes: S.swipes,
-        branch: S.branch,
         answers: S.answers,
         tiebreaks: S.tiebreaks,
       });
@@ -549,65 +562,84 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
     const created = await api('/api/leads', { name, email, phone }, 3500);
     btn.disabled = false;
     if (created && created.id) S.lead = { id: created.id, token: created.token };
-    startRound(1);
+    startDeck();
   });
 
   /* ---------------------------------------------------------- deck */
-  const nodes = new Map();
+  /**
+   * There is no fixed deck. After every swipe the engine looks at which
+   * communities are still in play and hands back the next question worth
+   * asking, or nothing when the funnel has done its job.
+   */
+  let current = null;
+  let stageShown = 0;
 
-  function startRound(n) {
-    S.round = n;
-    S.at = 0;
-    S.queue = Q.buildRound(n, S.branch, S.swipes);
-    $('#r-name').textContent = Q.ROUND_NAME[n - 1];
-    show('s-deck');
-    render();
-    chrome();
+  function startDeck() {
+    stageShown = 0;
+    deal();
   }
 
-  function build(id) {
-    const card = Q.CARDS[id];
+  function deal() {
+    const card = F.next(S.swipes);
+    if (!card) return startTaps();
+    if (card.stage !== stageShown) {
+      const first = stageShown === 0;
+      stageShown = card.stage;
+      if (!first) return stageGate(card);
+    }
+    place(card);
+  }
+
+  function place(card) {
+    current = card;
+    render(card);
+    chrome(card);
+    show('s-deck');
+  }
+
+  function build(card) {
     const n = el('article', 'card');
-    n.dataset.id = id;
+    n.dataset.id = card.id;
     const media = el('div', 'media');
     const img = el('img');
-    img.src = 'img/' + id + '.svg';
+    img.src = 'img/' + card.img + '.svg';
     img.alt = card.t;
     img.draggable = false;
     media.appendChild(img);
     const body = el('div', 'body');
-    body.appendChild(el('span', 'kicker', card.f[0]));
+    body.appendChild(el('span', 'kicker', card.facet[0]));
     body.appendChild(el('h3', '', card.t));
     body.appendChild(el('p', '', card.c));
     n.append(media, body, el('div', 'stamp yes', 'Yes'), el('div', 'stamp no', 'Nope'));
     return n;
   }
 
-  function render() {
-    const view = S.queue.slice(S.at, S.at + 3);
-    const keep = new Set(view);
-    for (const [id, n] of nodes) if (!keep.has(id)) { n.remove(); nodes.delete(id); }
-    for (let i = view.length - 1; i >= 0; i -= 1) {
-      const id = view[i];
-      let n = nodes.get(id);
-      if (!n) { n = build(id); nodes.set(id, n); }
-      n.className = 'card' + (i === 1 ? ' b1' : i === 2 ? ' b2' : '');
-      n.style.transform = '';
-      n.setAttribute('aria-hidden', i === 0 ? 'false' : 'true');
-      $('#stack').appendChild(n);
+  function render(card) {
+    const stack = $('#stack');
+    Array.from(stack.querySelectorAll('.card:not(.gone)')).forEach((n) => n.remove());
+    // A peek at what a yes would bring up next, so the stack still reads as a stack.
+    const peek = F.next(S.swipes.concat([{ id: card.id, dir: 'y' }]));
+    if (peek) {
+      const behind = build(peek);
+      behind.className = 'card b1';
+      behind.setAttribute('aria-hidden', 'true');
+      stack.appendChild(behind);
+      new Image().src = 'img/' + peek.img + '.svg';
     }
-    const next = S.queue[S.at + 3];
-    if (next) new Image().src = 'img/' + next + '.svg';
+    const node = build(card);
+    node.setAttribute('aria-hidden', 'false');
+    stack.appendChild(node);
   }
 
-  function chrome() {
-    const total = S.queue.length;
-    const done = Math.min(S.at, total);
-    $('#r-count').textContent = done >= total ? total + ' of ' + total : (done + 1) + ' of ' + total;
-    for (let r = 1; r <= 3; r += 1) {
-      $('#seg' + r).style.width = (r < S.round ? 100 : r > S.round ? 0 : total ? (done / total) * 100 : 0) + '%';
+  function chrome(card) {
+    const p = F.progress(S.swipes);
+    const stage = card ? card.stage : p.stage;
+    $('#r-name').textContent = (F.STAGES[stage - 1] || {}).name || '';
+    $('#r-alive').textContent = String(p.alive);
+    for (let i = 1; i <= 4; i += 1) {
+      $('#seg' + i).style.width = (i < stage ? 100 : i > stage ? 0 : 55) + '%';
     }
-    $('#p-undo').disabled = S.at === 0;
+    $('#p-undo').disabled = S.swipes.length === 0;
   }
 
   function top() {
@@ -615,56 +647,56 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
     return live.length ? live[live.length - 1] : null;
   }
 
-  const YES_LINES = ['Noted.', 'Good taste.', 'Filed under yes.', 'Adding that.'];
-  const NO_LINES = ['Crossed off.', 'Never again.', 'Fair enough.', 'Struck out.'];
-
   function commit(dir, node) {
-    if (S.locked) return;
-    const id = S.queue[S.at];
-    if (!id || !node) return;
+    if (S.locked || !current || !node) return;
+    const card = current;
     S.locked = true;
-    S.swipes = S.swipes.filter((s) => s.id !== id);
-    S.swipes.push({ id: id, dir: dir, round: S.round });
-    S.at += 1;
-    nodes.delete(id);
+    const before = F.progress(S.swipes).alive;
+    S.swipes = S.swipes.filter((s) => s.id !== card.id);
+    S.swipes.push({ id: card.id, dir: dir });
+
     const sign = dir === 'y' ? 1 : -1;
     node.classList.add('gone');
     node.style.transform = 'translate(' + sign * (window.innerWidth + 180) + 'px, -40px) rotate(' + sign * 24 + 'deg)';
     node.querySelector(dir === 'y' ? '.stamp.yes' : '.stamp.no').style.opacity = 1;
     setTimeout(() => node.remove(), 380);
     navigator.vibrate?.(dir === 'y' ? 14 : 9);
-    say(dir === 'y' ? YES_LINES : NO_LINES);
-    render();
-    chrome();
+
+    const after = F.progress(S.swipes).alive;
+    say(before, after);
     syncSoon();
-    setTimeout(() => {
-      S.locked = false;
-      if (S.at >= S.queue.length) endRound();
-    }, 170);
+    setTimeout(() => { S.locked = false; deal(); }, 230);
   }
 
   function undo() {
-    if (S.locked || S.at === 0) return;
-    S.at -= 1;
+    if (S.locked || !S.swipes.length) return;
     S.swipes.pop();
-    const id = S.queue[S.at];
-    nodes.delete(id);
-    render();
-    const n = nodes.get(id);
-    if (n) n.classList.add('back');
-    chrome();
+    stageShown = 0;
+    const card = F.next(S.swipes);
+    if (!card) return;
+    stageShown = card.stage;
+    place(card);
+    const node = top();
+    if (node) node.classList.add('back');
     syncSoon();
-    say(['Second look.']);
   }
 
+  const YES_LINES = ['Noted.', 'Good taste.', 'Filed under yes.'];
+  const NO_LINES = ['Crossed off.', 'Fair enough.', 'Struck out.'];
+
   let toastT = null;
-  function say(lines) {
-    const left = S.queue.length - S.at;
+  function say(before, after) {
+    const knocked = before - after;
+    const names = knocked > 0 ? F.ruledOutBy(S.swipes, S.swipes.length - 1) : [];
+    let line;
+    if (knocked === 0) line = (Math.random() < 0.5 ? YES_LINES : NO_LINES)[Math.floor(Math.random() * 3)];
+    else if (names.length <= 2) line = names.join(' and ') + ' out.';
+    else line = knocked + ' areas out, ' + after + ' left.';
     const t = $('#toast');
-    t.textContent = left === 1 ? 'One more.' : lines[Math.floor(Math.random() * lines.length)];
+    t.textContent = line;
     t.classList.add('on');
     clearTimeout(toastT);
-    toastT = setTimeout(() => t.classList.remove('on'), 1000);
+    toastT = setTimeout(() => t.classList.remove('on'), 1300);
   }
 
   /* ------------------------------------------------------- dragging */
@@ -701,7 +733,7 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
     } else {
       n.classList.add('settle');
       n.style.transform = '';
-      n.querySelectorAll('.stamp').forEach((s) => { s.style.opacity = 0; });
+      n.querySelectorAll('.stamp').forEach((st) => { st.style.opacity = 0; });
     }
   }
   window.addEventListener('pointerup', release);
@@ -719,36 +751,28 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
     if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); undo(); }
   });
 
-  /* -------------------------------------------- between the rounds */
-  function endRound() {
-    if (S.round === 1) { S.branch = Q.decideBranch(S.swipes); syncSoon(); gate(2); }
-    else if (S.round === 2) gate(3);
-    else startTaps();
-  }
-
-  function gate(next) {
-    const yes = Q.likes(S.swipes, S.round);
+  /* --------------------------------------------- between the stages */
+  function stageGate(card) {
+    const p = F.progress(S.swipes);
+    const state = F.replay(S.swipes);
+    const gone = [];
+    for (let i = 0; i < S.swipes.length; i += 1) {
+      for (const name of F.ruledOutBy(S.swipes, i)) if (gone.indexOf(name) === -1) gone.push(name);
+    }
+    $('#g-num').textContent = String(p.alive);
+    $('#g-eyebrow').textContent = p.alive === 1 ? 'Area still in play' : 'Areas still in play';
+    $('#g-title').textContent = (F.STAGES[card.stage - 1] || {}).name || 'Narrowing';
+    $('#g-sub').textContent = state.kind && state.kind !== 'any'
+      ? 'You are looking for ' + F.kindLabel(state.kind) + '. Everything that cannot offer one is gone, and so are the questions about them.'
+      : 'Still open on the type of home, so the next questions keep both doors open.';
     const learned = $('#g-learned');
     learned.innerHTML = '';
-    $('#g-num').textContent = String(next);
-    $('#g-title').textContent = next === 2 ? 'Now we narrow' : 'The fussy bit';
-
-    if (next === 2) {
-      $('#g-sub').textContent = yes.length
-        ? 'You leaned towards ' + Q.BRANCH_NAME[S.branch] + '. The next six are picked for that, not for everyone.'
-        : 'You passed on all six, which is useful too. The next six come at it from another angle.';
-      yes.forEach((s) => learned.appendChild(el('li', '', '✓ ' + Q.CARDS[s.id].t)));
-      if (!yes.length) learned.appendChild(el('li', '', '✗ None of the six'));
-      $('#g-note').textContent = 'Six more cards, then the questions that pick your areas.';
-    } else {
-      const f = Q.facets(Q.likes(S.swipes, 2).map((s) => ({ id: s.id, dir: 'y' })));
-      $('#g-sub').textContent = 'Water, work and the deal-breakers. This round decides which communities make the list.';
-      f.want.forEach((row) => learned.appendChild(el('li', '', row.key + ': ' + row.values.join(', '))));
-      if (!f.want.length) learned.appendChild(el('li', '', 'Nothing in round two landed, so we keep it broad.'));
-      $('#g-note').textContent = 'Last six cards.';
-    }
-    $('#g-go').textContent = next === 2 ? 'Deal round two' : 'Deal round three';
-    $('#g-go').onclick = () => startRound(next);
+    gone.slice(0, 5).forEach((name) => learned.appendChild(el('li', '', '✗ ' + name)));
+    if (gone.length > 5) learned.appendChild(el('li', '', '✗ and ' + (gone.length - 5) + ' more'));
+    if (!gone.length) learned.appendChild(el('li', '', 'Nothing ruled out yet.'));
+    $('#g-note').textContent = 'Next: ' + ((F.STAGES[card.stage - 1] || {}).name || '').toLowerCase() + '.';
+    $('#g-go').textContent = 'Keep going';
+    $('#g-go').onclick = () => place(card);
     show('s-gate');
   }
 
@@ -764,7 +788,8 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
    * communities actually disagree. Two is usually enough to split them.
    */
   function appendTiebreaks() {
-    const picked = C.pickTiebreakers(lead(), 2);
+    const l = lead();
+    const picked = C.pickTiebreakers(l, 2, matchOpts(l));
     for (const tb of picked) S.taps.push({ kind: 'tb', tb: tb });
   }
 
@@ -811,13 +836,14 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
     }
 
     $('#q-shortlisting').innerHTML = '';
-    const leading = C.match(lead(), { limit: 3 }).top;
+    const lq = lead();
+    const leading = C.match(lq, Object.assign({ limit: 3 }, matchOpts(lq))).top;
     if (leading.length && (S.answers.budget || i >= 2)) {
       $('#q-shortlisting').appendChild(document.createTextNode('Leading so far: '));
       $('#q-shortlisting').appendChild(el('b', '', leading.map((c) => c.name).join(', ')));
     }
 
-    $('#q-back').onclick = () => (i === 0 ? startRound(3) : askTap(i - 1));
+    $('#q-back').onclick = () => (i === 0 ? deal() : askTap(i - 1));
     $('#q-back').textContent = i === 0 ? 'Back to cards' : 'Back';
     show('s-quick');
   }
@@ -847,8 +873,8 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
   /* --------------------------------------------------------- result */
   function result() {
     const l = lead();
-    const picked = C.match(l, { limit: 3 });
-    const hot = Q.hotness(l);
+    const picked = C.match(l, Object.assign({ limit: 3 }, matchOpts(l)));
+    const hot = F.hotness(l);
     $('#ref').textContent = 'Shortlist ready';
 
     $('#r-title').textContent = picked.top.length > 1
@@ -863,8 +889,21 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
     list.innerHTML = '';
     picked.top.forEach((c, i) => list.appendChild(areaCard(c, i + 1)));
 
-    const also = picked.also;
+    let also = picked.also;
+    let alsoHeading = 'Also worth a look';
+    if (also.length < 2) {
+      // Narrowed to almost nothing: show the closest thing the funnel ruled out.
+      const everywhere = C.match(l, Object.assign({ limit: 6 }, matchOpts(l), { alive: null }));
+      const aliveIds = {};
+      picked.top.concat(picked.also).forEach((a) => { aliveIds[a.id] = true; });
+      const near = everywhere.top.concat(everywhere.also).filter((a) => !aliveIds[a.id]).slice(0, 2);
+      if (near.length) {
+        also = also.concat(near);
+        alsoHeading = 'Ruled out along the way, but close';
+      }
+    }
     $('#r-also').hidden = !also.length;
+    $('#r-also').querySelector('h4').textContent = alsoHeading;
     const alsoList = $('#r-also-list');
     alsoList.innerHTML = '';
     also.forEach((c) => {
@@ -907,8 +946,8 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
     add('Funds', (Q.option('payment', S.answers.payment) || {}).l);
     add('Timing', (Q.option('timeline', S.answers.timeline) || {}).l);
     add('Viewing', (Q.option('viewing', S.answers.viewing) || {}).l);
-    add('Leans', Q.BRANCH_NAME[S.branch]);
-    const f = Q.facets(S.swipes);
+    add('Looking for', F.kindLabel(F.replay(S.swipes).kind));
+    const f = F.facets(S.swipes);
     f.want.forEach((row) => add(row.key, row.values.join(', ')));
     if (f.no.length) {
       const flat = f.no.reduce((all, row) => all.concat(row.values), []);
@@ -917,13 +956,13 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
 
     const strip = $('#r-liked');
     strip.innerHTML = '';
-    Q.likes(S.swipes).forEach((s) => {
+    F.likes(S.swipes).forEach((s) => {
       const fig = el('figure');
       const img = el('img');
       img.src = 'img/' + s.id + '.svg';
-      img.alt = Q.CARDS[s.id].t;
+      img.alt = F.BY_ID[s.id].t;
       fig.appendChild(img);
-      fig.appendChild(el('figcaption', '', Q.CARDS[s.id].t));
+      fig.appendChild(el('figcaption', '', F.BY_ID[s.id].t));
       strip.appendChild(fig);
     });
 
@@ -981,7 +1020,8 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
   function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
   function fullText() {
-    return 'Areas that suit ' + S.contact.name + ':\n\n' + C.shortlistText(lead()) + '\n\n' + Q.briefText(lead());
+    const l = lead();
+    return 'Areas that suit ' + S.contact.name + ':\n\n' + C.shortlistText(l, matchOpts(l)) + '\n\n' + F.briefText(l);
   }
 
   $('#r-send').addEventListener('click', () => {
@@ -1007,10 +1047,9 @@ details.brief summary { cursor: pointer; font-size: 13.5px; color: var(--ink-sof
   });
 
   $('#r-again').addEventListener('click', () => {
-    S.swipes = []; S.at = 0; S.round = 0; S.branch = 'mixed';
-    S.answers = {}; S.tiebreaks = {}; S.taps = []; S.lead = null;
-    nodes.forEach((n) => n.remove());
-    nodes.clear();
+    S.swipes = []; S.answers = {}; S.tiebreaks = {}; S.taps = []; S.lead = null;
+    stageShown = 0; current = null;
+    Array.from($('#stack').querySelectorAll('.card')).forEach((n) => n.remove());
     $('#ref').textContent = 'Dubai';
     show('s-welcome');
   });

@@ -35,7 +35,6 @@ async function startLead(overrides = {}) {
     name: 'Alex Morgan',
     email: 'alex@example.com',
     phone: '+971501234567',
-    area: 'Dubai Marina',
     ...overrides,
   });
   return { res, body: await res.json() };
@@ -47,7 +46,8 @@ test('the config endpoint hands over the readiness questions', async () => {
   assert.equal(res.status, 200);
   assert.equal(body.branding.currency, 'AED');
   assert.ok(body.questions.payment.options.length >= 5);
-  assert.equal(body.deckSize, 18);
+  assert.ok(body.communities >= 20);
+  assert.ok(body.maxCards >= 8);
 });
 
 test('a bad email never becomes a lead', async () => {
@@ -69,14 +69,14 @@ test('progress is saved as they swipe, and junk is dropped', async () => {
   const { body: lead } = await startLead();
   const res = await post(`${base}/api/leads/${lead.id}/progress`, {
     token: lead.token,
-    branch: 'apartment',
     swipes: [
-      { id: 'd1-marina', dir: 'y', round: 1 },
-      { id: 'd1-marina', dir: 'n', round: 1 },
-      { id: 'not-a-card', dir: 'y', round: 1 },
-      { id: 'a-seaview', dir: 'sideways', round: 9 },
+      { id: 'k-villa', dir: 'y' },
+      { id: 'k-villa', dir: 'n' },
+      { id: 'not-a-card', dir: 'y' },
+      { id: 'l-golf', dir: 'sideways' },
     ],
     answers: { payment: 'cash_uae', budget: 'nonsense' },
+    tiebreaks: { 'tb-beach-golf': 'golf', 'tb-made-up': 'x' },
   });
   assert.equal(res.status, 200);
 
@@ -84,10 +84,10 @@ test('progress is saved as they swipe, and junk is dropped', async () => {
   assert.equal(stored.swipes.length, 2);
   assert.equal(stored.swipes[0].dir, 'y');
   assert.equal(stored.swipes[1].dir, 'n', 'an unknown direction falls back to a pass');
-  assert.equal(stored.swipes[1].round, 1, 'an impossible round falls back to one');
   assert.equal(stored.answers.payment, 'cash_uae');
   assert.ok(!('budget' in stored.answers), 'an answer that is not on the list is ignored');
-  assert.equal(stored.branch, 'apartment');
+  assert.equal(stored.tiebreaks['tb-beach-golf'], 'golf');
+  assert.ok(!('tb-made-up' in stored.tiebreaks), 'an invented tie-break is ignored');
 });
 
 test('a stale beacon cannot shrink a session that moved on', async () => {
@@ -95,14 +95,14 @@ test('a stale beacon cannot shrink a session that moved on', async () => {
   await post(`${base}/api/leads/${lead.id}/progress`, {
     token: lead.token,
     swipes: [
-      { id: 'd1-marina', dir: 'y', round: 1 },
-      { id: 'd1-downtown', dir: 'n', round: 1 },
-      { id: 'd1-beach', dir: 'n', round: 1 },
+      { id: 'k-villa', dir: 'y' },
+      { id: 'l-golf', dir: 'y' },
+      { id: 'g-established', dir: 'n' },
     ],
   });
   await post(`${base}/api/leads/${lead.id}/progress`, {
     token: lead.token,
-    swipes: [{ id: 'd1-marina', dir: 'y', round: 1 }],
+    swipes: [{ id: 'k-villa', dir: 'y' }],
   });
   assert.equal(store.get(lead.id).swipes.length, 3);
 });
@@ -117,13 +117,13 @@ test('finishing returns the client their own read-out and nothing of the agent\'
   const { body: lead } = await startLead();
   const res = await post(`${base}/api/leads/${lead.id}/finish`, {
     token: lead.token,
-    branch: 'prime',
-    swipes: [{ id: 'd1-beach', dir: 'y', round: 1 }],
+    swipes: [{ id: 'k-villa', dir: 'y' }, { id: 'l-beachvilla', dir: 'y' }],
     answers: { purpose: 'live', budget: 'b6', payment: 'cash_uae', timeline: 'now', viewing: 'here_now' },
   });
   const body = await res.json();
   assert.equal(res.status, 200);
   assert.ok(body.hotness.value > 60);
+  assert.ok(body.areas.top.length, 'the client gets its shortlist back');
   assert.ok(!('agentNotes' in body));
   assert.ok(!('briefText' in body));
   assert.ok(store.get(lead.id).completedAt);
@@ -156,6 +156,7 @@ test('the desk lists leads hottest first, with the scoring shown', async () => {
   const top = body.leads[0];
   assert.ok(top.hotness.parts.length === 6);
   assert.ok(top.briefText.length > 10);
+  assert.ok(top.narrowing.from >= 20);
   assert.ok(!('token' in top), 'client tokens stay private');
 
   const csv = await fetch(`${base}/api/agent/leads.csv`, { headers: { cookie } });
@@ -173,14 +174,14 @@ test('the client page and the shared engine are both served', async () => {
   const html = await page.text();
   assert.match(html, /Which area suits you/);
 
-  for (const [path, marker] of [['/qualify.js', /Qualify/], ['/communities.js', /Communities/]]) {
+  for (const [path, marker] of [['/qualify.js', /Qualify/], ['/communities.js', /Communities/], ['/funnel.js', /Funnel/]]) {
     const engine = await fetch(`${base}${path}`);
     assert.equal(engine.status, 200, `${path} should be served`);
     assert.match(engine.headers.get('content-type'), /javascript/);
     assert.match(await engine.text(), marker);
   }
 
-  const image = await fetch(`${base}/img/d1-beach.svg`);
+  const image = await fetch(`${base}/img/k-townhouse.svg`);
   assert.equal(image.status, 200);
   assert.match(image.headers.get('content-type'), /svg/);
 });

@@ -1490,14 +1490,140 @@ scenes['v-staff'] = () =>
     <text x="400" y="552" font-family="Verdana, Geneva, sans-serif" font-size="18" letter-spacing="5" fill="#a99e8d" text-anchor="middle">SEPARATE ENTRANCE, OFF THE KITCHEN</text>
   `);
 
+/* ------------------------------------------- the structural questions */
+
+scenes['k-townhouse'] = () => {
+  const s = sky('sky', '#cfe9ff', '#fdf5e8');
+  const unit = (x, w, tone, door) => `<g>
+    <rect x="${x}" y="250" width="${w}" height="210" fill="${tone}"/>
+    <rect x="${x}" y="236" width="${w}" height="18" rx="4" fill="#e6dac8"/>
+    <rect x="${x + w * 0.14}" y="278" width="${w * 0.3}" height="52" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="5"/>
+    <rect x="${x + w * 0.56}" y="278" width="${w * 0.3}" height="52" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="5"/>
+    <rect x="${x + w * 0.14}" y="352" width="${w * 0.3}" height="48" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="5"/>
+    <rect x="${x + w * 0.54}" y="360" width="${w * 0.34}" height="100" rx="4" fill="${door}"/>
+    <circle cx="${x + w * 0.84}" cy="412" r="4" fill="${C.sun}"/>
+  </g>`;
+  return svg(
+    `${s.def}`,
+    `${s.body}${sun(690, 112, 44)}${cloud(170, 108, 0.85, 0.5)}
+    <rect x="0" y="460" width="${W}" height="140" fill="#7ec89a"/>
+    ${unit(60, 150, '#fbf6ec', '#8a6142')}
+    ${unit(215, 150, '#f3eadb', '#3c6e55')}
+    ${unit(370, 150, '#fbf6ec', '#8a6142')}
+    ${unit(525, 150, '#f3eadb', '#7d5a8a')}
+    ${unit(680, 120, '#fbf6ec', '#8a6142')}
+    ${Array.from({ length: 5 }, (_, i) => `<rect x="${205 + i * 155}" y="236" width="12" height="224" fill="#ded2be"/>`).join('')}
+    <rect x="0" y="460" width="${W}" height="16" fill="#e2d8c4"/>
+    <rect x="0" y="516" width="${W}" height="84" fill="#d8d0c0"/>
+    ${Array.from({ length: 6 }, (_, i) => `<rect x="${40 + i * 135}" y="552" width="60" height="7" rx="3" fill="#f2ede2"/>`).join('')}
+    ${palm(30, 512, 120, -10)}${palm(760, 514, 130, 12)}
+    ${bush(180, 500, 22)}${bush(500, 502, 26, C.leafLight)}
+    <g transform="translate(300 500)">
+      <rect x="-44" y="-26" width="88" height="26" rx="8" fill="#3f6fa8"/>
+      <rect x="-30" y="-40" width="60" height="18" rx="7" fill="#cfe4f2"/>
+      <circle cx="-26" cy="4" r="11" fill="#2b3440"/><circle cx="26" cy="4" r="11" fill="#2b3440"/>
+    </g>`
+  );
+};
+
+scenes['l-beachapt'] = () => {
+  const s = sky('sky', '#bfe4ff', '#fdf0d9');
+  const tower = (x, w, h, tone) => `<g>
+    <rect x="${x}" y="${380 - h}" width="${w}" height="${h}" rx="8" fill="${tone}"/>
+    ${windowGrid(x, 380 - h + 12, w, h - 24, Math.max(2, Math.round(w / 26)), Math.round(h / 32), 'rgba(255,255,255,0.4)', 6)}
+    <rect x="${x - 6}" y="${372 - h}" width="${w + 12}" height="12" rx="5" fill="#ffffff" opacity="0.6"/>
+  </g>`;
+  return svg(
+    `${s.def}${linear('sea', '#5cc8e0', '#1f8fbc')}${linear('sand', '#f6e7cc', '#e6d2ae')}${linear('t1', '#cfe0ec', '#8fb2c8')}${linear('t2', '#e2ecf3', '#a9c4d6')}`,
+    `${s.body}${sun(130, 118, 50, '#ffd9a0')}
+    ${tower(96, 96, 250, 'url(#t1)')}${tower(206, 78, 190, 'url(#t2)')}
+    ${tower(300, 108, 290, 'url(#t2)')}${tower(424, 86, 220, 'url(#t1)')}
+    ${tower(524, 100, 260, 'url(#t2)')}${tower(640, 76, 200, 'url(#t1)')}
+    <rect x="0" y="380" width="${W}" height="26" fill="#efe3cd"/>
+    <rect x="0" y="404" width="${W}" height="86" fill="url(#sea)"/>
+    <g opacity="0.5" fill="#ffffff">
+      ${Array.from({ length: 7 }, (_, i) => `<path d="M${30 + i * 112} ${430 + (i % 3) * 20} q 22 -9 44 0 q -22 9 -44 0"/>`).join('')}
+    </g>
+    <path d="M0 486 q 200 18 400 4 t 400 6 L800 600 L0 600 Z" fill="url(#sand)"/>
+    <path d="M0 482 q 200 20 400 6 t 400 6 L800 500 L0 500 Z" fill="#ffffff" opacity="0.6"/>
+    ${palm(90, 560, 170, -16)}${palm(700, 556, 150, 14)}
+    ${lounger(280, 556, 0.95)}${lounger(380, 560, 0.95)}
+    ${parasol(250, 548, 0.9, '#e8a25c')}
+    <g opacity="0.2"><ellipse cx="330" cy="572" rx="110" ry="12" fill="${C.ink}"/></g>`
+  );
+};
+
+scenes['l-lagoon'] = () => {
+  const s = sky('sky', '#cfe9ff', '#f8fbff');
+  return svg(
+    `${s.def}${linear('lagoon', '#6fd3e4', '#2ba7cf')}${linear('render', '#fbf6ec', '#eadfc9')}`,
+    `${s.body}${sun(140, 110, 46)}${cloud(620, 106, 0.85, 0.5)}
+    <rect x="0" y="300" width="${W}" height="300" fill="#8ed4a4"/>
+    <g>
+      ${[70, 300, 540].map((x, i) => `<g>
+        <rect x="${x}" y="${230 - i % 2 * 10}" width="190" height="110" fill="url(#render)"/>
+        <rect x="${x - 10}" y="${216 - i % 2 * 10}" width="210" height="18" rx="5" fill="#eadfc9"/>
+        <rect x="${x + 22}" y="${256 - i % 2 * 10}" width="64" height="56" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="5"/>
+        <rect x="${x + 104}" y="${256 - i % 2 * 10}" width="64" height="56" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="5"/>
+      </g>`).join('')}
+    </g>
+    <path d="M0 400 q 120 -40 260 -18 q 150 24 300 -6 q 140 -28 240 2 L800 600 L0 600 Z" fill="url(#lagoon)"/>
+    <path d="M0 400 q 120 -40 260 -18 q 150 24 300 -6 q 140 -28 240 2 L800 418 L0 418 Z" fill="#ffffff" opacity="0.55"/>
+    <g opacity="0.5" fill="#ffffff">
+      ${Array.from({ length: 6 }, (_, i) => `<path d="M${70 + i * 122} ${470 + (i % 3) * 30} q 26 -11 52 0 q -26 11 -52 0"/>`).join('')}
+    </g>
+    <g>
+      <rect x="250" y="376" width="300" height="12" rx="6" fill="#e6dccb"/>
+      ${Array.from({ length: 8 }, (_, i) => `<rect x="${262 + i * 38}" y="388" width="10" height="26" fill="#d9ccb8"/>`).join('')}
+    </g>
+    ${palm(60, 402, 180, -16)}${palm(736, 406, 160, 14)}${palm(180, 392, 130, 10)}
+    ${lounger(340, 396, 0.85)}${parasol(310, 390, 0.8, '#e0785a')}
+    <g fill="#ffffff" opacity="0.9"><circle cx="470" cy="486" r="11"/><circle cx="560" cy="524" r="10"/></g>
+    <g stroke="#ffffff" stroke-width="4" opacity="0.55" fill="none">
+      <path d="M452 500 q 18 -12 36 0"/><path d="M544 538 q 18 -12 36 0"/>
+    </g>`
+  );
+};
+
+scenes['g-mansion'] = () => {
+  const s = sky('sky', '#cfe9ff', '#fdf6ea');
+  return svg(
+    `${s.def}${linear('stone', '#fdfaf4', '#ece0cc')}${linear('water', '#57c7e4', '#1d8fbd')}`,
+    `${s.body}${sun(680, 112, 46)}${cloud(150, 104, 0.9, 0.5)}
+    <rect x="0" y="330" width="${W}" height="270" fill="#86cf9f"/>
+    <path d="M0 330 q 200 -30 400 -6 t 400 -10 L800 600 L0 600 Z" fill="#76c592"/>
+    <g>
+      <rect x="120" y="186" width="560" height="190" fill="url(#stone)"/>
+      <rect x="104" y="170" width="592" height="22" rx="6" fill="#e4d6bd"/>
+      <rect x="240" y="146" width="320" height="44" fill="url(#stone)"/>
+      <rect x="226" y="132" width="348" height="18" rx="6" fill="#e4d6bd"/>
+      ${[150, 250, 470, 570].map((x) => `<rect x="${x}" y="222" width="80" height="96" rx="4" fill="${C.glass}" stroke="#ffffff" stroke-width="6"/>`).join('')}
+      <g>
+        <rect x="344" y="212" width="112" height="164" rx="6" fill="${C.glass}" stroke="#ffffff" stroke-width="7"/>
+        <line x1="400" y1="212" x2="400" y2="376" stroke="#ffffff" stroke-width="6"/>
+      </g>
+      ${[318, 482].map((x) => `<rect x="${x}" y="212" width="16" height="164" rx="8" fill="#efe4d2"/>`).join('')}
+      <rect x="120" y="366" width="560" height="14" fill="#e4d6bd"/>
+    </g>
+    ${waterBody(230, 420, 340, 110, 14)}
+    <rect x="220" y="410" width="360" height="12" rx="6" fill="#f2ead9"/>
+    <rect x="220" y="528" width="360" height="12" rx="6" fill="#f2ead9"/>
+    ${palm(90, 420, 200, -14)}${palm(714, 428, 180, 12)}
+    ${lounger(90, 470, 0.95)}${lounger(660, 486, 0.95, true)}
+    ${bush(180, 396, 30)}${bush(620, 398, 28, C.leafLight)}
+    <g opacity="0.18"><ellipse cx="400" cy="392" rx="280" ry="18" fill="${C.ink}"/></g>`
+  );
+};
+
 /* ------------------------------------------------------------------- run */
 
 function main() {
-  const { CARDS } = require('../lib/qualify');
+  const { CARDS } = require('../lib/funnel');
   const outDir = path.join(__dirname, '..', 'public', 'img');
   fs.mkdirSync(outDir, { recursive: true });
 
-  const missing = Object.keys(CARDS).filter((name) => !scenes[name]);
+  // Every card the funnel can deal needs a picture.
+  const missing = CARDS.map((c) => c.img).filter((name) => !scenes[name]);
   if (missing.length) {
     console.error(`No scene defined for: ${missing.join(', ')}`);
     process.exitCode = 1;

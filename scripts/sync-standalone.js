@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 
-for (const name of ['qualify.js', 'communities.js']) {
+for (const name of ['qualify.js', 'communities.js', 'funnel.js']) {
   const src = path.join(__dirname, '..', 'lib', name);
   const dest = path.join(__dirname, '..', 'public', name);
   const banner = `/* GENERATED FILE. Edit lib/${name} and run \`npm run sync\`. */\n`;

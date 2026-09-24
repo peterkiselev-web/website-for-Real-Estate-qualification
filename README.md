@@ -38,38 +38,50 @@ The dashboard passcode is printed in the terminal on first run. Set your own wit
 
 ## How the funnel narrows
 
-**Round 1, the wide net.** Six places with nothing in common: a Marina tower, a
-Downtown high-rise, a villa in a gated community, a beachfront villa, a golf
-community villa, off-plan with a payment plan. What they swipe right on decides
-which corner of the market they are in.
+There is no fixed deck. Every card knows which communities survive a yes and
+which survive a no, so an answer removes areas from the running and removes
+every question that only mattered to those areas. The engine then asks for the
+next question worth asking: the broadest one still open, and among those the one
+that splits what is left most evenly.
 
-**Round 2, narrowing.** Six cards picked for that corner. A villa buyer is asked
-about a majlis, a staff room, landscaping and a garage. An apartment buyer is
-asked about sea views, high floors, balconies and the podium pool. Nobody is
-asked about mowing a lawn they will never own.
+**Stage 1, what kind of home.** Villa, apartment or townhouse. One answer and
+half the map is gone. Say no to a villa and you are never asked about a majlis,
+a staff room, a garage, a private pool or a golf course, because none of them
+can apply to you any more.
 
-**Round 3, the fussy bit.** The water question is always settled here: shared
-pool, private pool, plunge pool or none. Plus home office, metro, gym, security,
-whatever is still undecided for their corner.
+**Stage 2, where.** Only the settings still possible for that kind. A villa
+buyer gets golf, beachfront, lagoon, family community. An apartment buyer gets
+waterfront, and then either "steps from the sand" or "in the middle of the
+city", never both. Yes to golf leaves six communities and the next questions are
+about which of those six.
 
-**Then six taps.** What it is for, budget, where their week happens, how it gets
-paid for, when they are moving, and whether they can view in person. Budget comes
-after the pictures on purpose: by then they have already shown you their taste, so
-the answer is honest rather than aspirational. The commute question does more work
-than any other single answer, because in Dubai it decides half the map.
+**Stage 3, which community.** Whatever still separates the survivors: the
+biggest plots, established streets versus brand new, walk to the metro, gates,
+sea view, rental demand. A question nobody left in the running can satisfy is
+never asked.
 
-**Then the tie-breaks, which are chosen live.** The page ranks the communities,
-finds where the leaders actually disagree, and asks only about that. Someone torn
-between the beach and the golf gets "Sand or greens?". Someone torn between
-Downtown and the Marina gets "Sea view or skyline?". Someone whose shortlist is
-already decided gets asked nothing. A tie-break outranks the swipes that led to
-it: picking greens pushes the beach down, not just golf up.
+**Stage 4, the details.** Pools, majlis, staff room, office, garage. Only when
+they still tell the shortlist apart.
 
-**Then the answer: three communities.** Ranked, with a match percentage, the
-reasons drawn from their own swipes, the entry price for the kind of home they
-want, the drive to where they work, and the catch. Plus two runners-up, and an
-honest "out of reach on this budget" line naming what they liked but cannot
-afford.
+The page shows the count falling as it happens: 28 areas, then 13, then 5, then
+2, with a screen between stages naming what just went out. It stops when four or
+fewer areas are left, or when no question can separate them, usually after six
+to eleven cards.
+
+**Then six taps** for purpose, budget, commute, funds, timing and viewing, and
+**one or two tie-breaks** chosen live from wherever the leaders still disagree.
+Beach or golf, sea view or skyline, metro or space. A tie-break outranks the
+swipes that led to it, so picking greens pushes the beach down rather than only
+lifting golf.
+
+**Then the answer:** the communities that survived, ranked, with the reasons from
+their own swipes, the entry price for the kind of home they want, the drive to
+where they work and the catch. If the funnel narrowed to one or two, the closest
+areas it ruled out are shown underneath for comparison, and anything they liked
+but cannot afford is named.
+
+A hard filter that would leave fewer than two communities is applied softly
+instead, so no combination of answers can ever narrow the map to nothing.
 
 ## How the temperature is worked out
 
@@ -78,7 +90,7 @@ afford.
 | Funds | 30 | Cash in the UAE 30, pre-approved mortgage 27, cash transferring in 23, mortgage not started 12, needs to sell first 7, no idea 3 |
 | Timing | 20 | Buying now 20, within a month 16, one to three months 12, three to six 6, watching 2 |
 | Viewing | 15 | In Dubai this week 15, in a few weeks 11, flying in 10, remote only 6 |
-| Clarity | 20 | Rounds played, a real mix of yes and no, and no contradictions |
+| Clarity | 20 | How far the funnel actually narrowed, a real mix of yes and no, and no contradictions |
 | Budget | 10 | Given at all, plus whether it actually reaches what they liked |
 | Contact | 5 | Name, email, phone |
 
@@ -107,8 +119,8 @@ the number instead of trusting it.
 - Every lead scored and sorted hottest first, with the six bands that produced
   the number and the flags underneath.
 - Status at a glance: opened, swiping now, on the money questions, finished, or
-  dropped out. Drop-outs show the round and the card they quit on, or which
-  readiness question they baulked at.
+  dropped out. Drop-outs show the card they quit on and how far the funnel had
+  narrowed by then, which is useful even when they never came back.
 - Every card they swiped right and left, so you can see the brief rather than
   read it.
 - A plain-text brief sized for WhatsApp or a CRM note, a copy button, a prefilled
@@ -204,15 +216,16 @@ keep retention short and tell buyers who you are.
 ```bash
 npm start      # run it
 npm run dev    # run it with auto restart
-npm test       # 48 unit and HTTP tests, no network needed
+npm test       # 47 unit and HTTP tests, no network needed
 npm run images # redraw the card illustrations
 npm run sync   # copy lib/qualify.js into public/ for flat-file hosting
 ```
 
 ```
 server.js                   routing, static files, agent auth, rate limits
-lib/qualify.js              the deck, the rounds, the questions, the hotness model
+lib/funnel.js               the cards, the narrowing engine, the hotness model
 lib/communities.js          the 28 communities, the matcher, the tie-break bank
+lib/qualify.js              the tap questions and the money vocabulary
 lib/scoring.js              shapes a lead for the dashboard
 lib/store.js                JSON persistence
 public/shortlist.html       the client funnel, standalone capable
@@ -221,7 +234,29 @@ scripts/generate-images.js  draws public/img/*.svg
 test/                       node:test suites
 ```
 
-`lib/qualify.js` and `lib/communities.js` are deliberately universal modules: the
-server requires them and the browser loads the same files, so a buyer and their
-agent always see the same shortlist and the same score. The copies in `public/`
-are generated by `npm run sync` and kept honest by a test.
+The three engine files are deliberately universal modules: the server requires
+them and the browser loads the same files, so a buyer and their agent always see
+the same shortlist and the same score. Everything is replayed from the swipe
+history, so nothing about the funnel is stored twice and the two sides cannot
+drift. The copies in `public/` are generated by `npm run sync` and kept honest by
+a test.
+
+### Editing the tree
+
+A card in `lib/funnel.js` looks like this:
+
+```js
+{
+  id: 'l-golf', stage: 2, img: 'd1-golf',
+  t: 'On a golf course',
+  c: 'Greens out of the window, buggy in the garage',
+  facet: ['Setting', 'golf community'],
+  when: (s) => s.wantsHouse(),                        // when this question applies
+  yes: { keep: (c) => (c.attrs.golf || 0) >= 2, hard: true, sig: { golf: 3, quiet: 2 } },
+  no:  { keep: () => true, hard: false, sig: { golf: -2 } },
+}
+```
+
+`hard: true` eliminates everything the `keep` test rejects. `when` is what makes
+it a funnel: a question that no longer applies is never dealt. Add a card and the
+engine will start using it wherever it discriminates; no ordering to maintain.
