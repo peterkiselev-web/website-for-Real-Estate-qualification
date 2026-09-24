@@ -3,10 +3,10 @@
 /**
  * Builds the static site.
  *
- * public/shortlist.html is written as a fragment (no doctype, no head) because
- * that is what the Claude artifact host wants. A real web server needs a proper
- * document, and above all it needs the viewport meta tag, or every phone
- * renders the page at desktop width and the type comes out tiny.
+ * public/shortlist.html is written as a fragment, with no doctype and no head,
+ * so it can be dropped into a host that supplies its own. A real web server
+ * needs a complete document, and above all it needs the viewport meta tag, or
+ * every phone renders the page at desktop width and the type comes out tiny.
  *
  * So this wraps the fragment once and writes it twice:
  *   public/index.html   what `npm start` serves at /
